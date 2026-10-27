@@ -38,5 +38,5 @@ Running log of substantive changes made on top of the upstream baseline
 - No true historical backtest: the data layer pulls the latest bar and ignores
   `--run-date` for pricing. System is effectively live-forward only.
 - Each agent fetches prices live inside its own run; a single frozen price set
-  per day would make the roster strictly fair (addressed below — see BACKLOG for
-  verification caveat).
+  per day would make the roster strictly fair. Specced in BACKLOG.md (#2), not
+  yet applied — it touches the live path and needs a smoke test.

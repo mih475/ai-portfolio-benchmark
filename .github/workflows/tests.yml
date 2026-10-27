@@ -1,0 +1,24 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  simulator-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # The simulator suite is stdlib-only by design, so no install step is
+      # needed and the tests never touch the network or any API keys.
+      - name: Run PortfolioSimulator test suite
+        run: python3 v2/tests/test_portfolio_simulator.py
