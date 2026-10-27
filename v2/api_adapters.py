@@ -17,6 +17,16 @@ from .config import LLMProvider
 
 logger = logging.getLogger(__name__)
 
+
+def _proto_to_plain(obj):
+    """Convert google-genai function_call args (proto Map/RepeatedComposite) to
+    plain JSON-serializable Python so json.dumps won't choke on proto types."""
+    if hasattr(obj, "items"):
+        return {k: _proto_to_plain(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_proto_to_plain(v) for v in obj]
+    return obj
+
 def retry_with_backoff(func: Callable, max_retries: int = 5, base_delay: float = 2.0):
     """Generic 2026-style exponential backoff wrapper."""
     def wrapper(*args, **kwargs):
@@ -309,22 +319,57 @@ class UnifiedLLMClient:
                 args = fc.args
                 
                 if func_name == "propose_trades":
-                    return json.dumps(args)
-                
+                    return json.dumps(_proto_to_plain(args))
+
                 call_count += 1
                 logger.info(f"{self.provider.name} calling {func_name}")
-                result = execute_tool(func_name, args)
-                
+                result = execute_tool(func_name, _proto_to_plain(args))
+
                 response_parts.append(types.Part(
                     function_response=types.FunctionResponse(
                         name=func_name,
                         response={"result": result}
                     )
                 ))
-            
+
             contents.append({"role": "user", "parts": response_parts})
-            
-        return ""
+
+        # Budget exhausted without a decision — force one final propose_trades
+        # call so the agent always ends its turn with a structured decision
+        # (empty trades = hold) instead of silently doing nothing.
+        return self._force_google_propose(client, types, contents, tools)
+
+    def _force_google_propose(self, client, types, contents, tools: List[Dict]) -> str:
+        """Make a final call where propose_trades is the only tool, nudging the
+        model to commit. Returns the proposal JSON, or '' on any failure."""
+        try:
+            propose = next((t for t in tools if t.get("name") == "propose_trades"), None)
+            if not propose:
+                return ""
+            ptool = types.Tool(function_declarations=[types.FunctionDeclaration(
+                name=propose["name"],
+                description=propose["description"],
+                parameters=propose["parameters"],
+            )])
+            contents = contents + [{"role": "user", "parts": [{"text": (
+                "You have used your analysis budget. Call propose_trades NOW with your "
+                "final decisions. If you do not want to trade today, call it with an "
+                "empty trades list to hold."
+            )}]}]
+            resp = client.models.generate_content(
+                model=self.provider.model_id,
+                contents=contents,
+                config=types.GenerateContentConfig(
+                    temperature=self.provider.temperature, tools=[ptool]),
+            )
+            for p in resp.candidates[0].content.parts:
+                if getattr(p, "function_call", None) and p.function_call.name == "propose_trades":
+                    return json.dumps(_proto_to_plain(p.function_call.args))
+            logger.warning(f"{self.provider.name} did not propose on forced final call")
+            return ""
+        except Exception as e:
+            logger.warning(f"Forced propose failed: {e}")
+            return ""
 
     def _run_mistral_loop(self, system_prompt: str, user_prompt: str, tools: List[Dict], max_calls: int) -> str:
         # Mistral uses Mistral class from mistralai.client in SDK v2+

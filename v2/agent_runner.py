@@ -146,8 +146,10 @@ def run_agent(agent_id: str, snapshot: dict, simulator: PortfolioSimulator,
             with open(playbook_path, encoding="utf-8") as f:
                 playbook = f.read()
 
-        # Get tools
-        tools = get_tool_definitions()
+        # Get tools active for this run context (hides look-ahead tools on a
+        # historical date so the agent doesn't burn its budget calling them).
+        from .mcp_servers import get_active_tool_definitions
+        tools = get_active_tool_definitions()
         
         # Sanitize tools: Gemini/Google SDK crashes if any tool has "$schema" in parameters
         for t in tools:

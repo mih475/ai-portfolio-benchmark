@@ -53,6 +53,20 @@ Running log of substantive changes made on top of the upstream baseline
   gives a one-click (`workflow_dispatch`) single-agent run that uploads its output
   as an artifact instead of committing — cheap end-to-end validation.
 
+### Fixed (surfaced by the Tier-1 backtest — agents researched but never traded)
+- **Hide disabled tools from the model in historical runs.** The look-ahead
+  gating disabled tools at call time but still *offered* them, so Gemini kept
+  calling `get_fundamentals`/`web_search` etc., got "disabled" back, and burned
+  its whole tool-call budget without ever proposing. `get_active_tool_definitions`
+  now omits look-ahead tools entirely for a past date; the runner uses it.
+- **Force a final decision when the tool budget is spent.** The Gemini loop
+  previously `return ""`-ed if the agent exhausted its research calls without
+  calling `propose_trades` (→ "failed to propose" → flat). It now makes one final
+  call with `propose_trades` as the only tool, nudging a commit (empty = hold).
+- **Robust proposal parsing.** Gemini `function_call.args` (proto Map) is now
+  converted to plain dict before `json.dumps`, so a proposal can't fail to
+  serialize.
+
 ### Fixed (surfaced by the first backtest)
 - **Gemini model id updated `gemini-2.5-flash` → `gemini-3.8-flash`.** The old id
   was retired by Google and returns 404 for new users, so every Gemini agent

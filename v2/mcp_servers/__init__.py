@@ -83,6 +83,19 @@ def get_tool_definitions() -> list[dict]:
     return [tool["definition"] for tool in TOOLS.values()]
 
 
+def get_active_tool_definitions() -> list[dict]:
+    """Tool definitions to expose to the LLM for the current run context.
+
+    In a historical (past-date) run, tools that can only return present-day data
+    are hidden entirely — not just disabled on call — so the model doesn't waste
+    its limited tool-call budget repeatedly invoking tools that return "disabled".
+    """
+    defs = get_tool_definitions()
+    if _is_historical():
+        defs = [d for d in defs if d.get("name") not in _LIVE_ONLY_TOOLS]
+    return defs
+
+
 def execute_tool(tool_name: str, arguments: dict[str, Any]) -> dict:
     """
     Execute a tool by name with the given arguments.

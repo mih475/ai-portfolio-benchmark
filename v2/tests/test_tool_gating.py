@@ -92,6 +92,25 @@ def t_future_date_is_live():
     assert "disabled" not in out and rec.calls, out
 
 
+@test
+def t_active_definitions_hide_live_only_when_historical():
+    # Fake registry with named definitions, incl. a live-only and an as-of tool.
+    reg.TOOLS = {
+        "get_technicals": {"definition": {"name": "get_technicals"}, "execute": None},
+        "web_search": {"definition": {"name": "web_search"}, "execute": None},
+        "get_fundamentals": {"definition": {"name": "get_fundamentals"}, "execute": None},
+    }
+    reg.set_run_context(PAST)
+    names_hist = {d["name"] for d in reg.get_active_tool_definitions()}
+    reg.set_run_context(None)
+    names_live = {d["name"] for d in reg.get_active_tool_definitions()}
+    # Historical: live-only tools hidden; as-of/neutral tools kept.
+    assert "web_search" not in names_hist and "get_fundamentals" not in names_hist, names_hist
+    assert "get_technicals" in names_hist
+    # Live: everything exposed.
+    assert {"get_technicals", "web_search", "get_fundamentals"} <= names_live, names_live
+
+
 def main():
     passed = failed = 0
     for fn in TESTS:
