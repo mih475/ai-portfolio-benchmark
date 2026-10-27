@@ -87,6 +87,19 @@ def t_summarize_sorts_and_skips_history():
     assert "Leaderboard" in md and "winner" in md
 
 
+@test
+def t_no_activity_flagged():
+    # An agent that ran days but never moved / held nothing is flagged.
+    flat = {"agent": "stuck", "value": 10000.0, "cum_return_pct": 0.0,
+            "max_drawdown_pct": 0.0, "days": 5, "positions": 0}
+    live = {"agent": "active", "value": 10100.0, "cum_return_pct": 1.0,
+            "max_drawdown_pct": 0.5, "days": 5, "positions": 2}
+    assert summ._no_activity(flat) is True
+    assert summ._no_activity(live) is False
+    md = summ.render([live, flat])
+    assert "no activity" in md
+
+
 def main():
     passed = failed = 0
     for fn in TESTS:
