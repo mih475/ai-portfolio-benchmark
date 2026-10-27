@@ -25,10 +25,11 @@ The MIH acts as the agents' "Bloomberg Terminal," delivering a machine-readable 
 ### 2. TOON Visualization (Token-Oriented Object Notation)
 To maximize context window efficiency, MIH data is serialized into **Markdown Tables (TOON)** rather than JSON. This reduces token overhead by **60%**, allowing larger data payloads without exceeding provider limits.
 
-### 3. The 18-Agent Roster
+### 3. The Agent Roster (18 LLM agents + 1 random control = 19)
  benchmarked across:
-- **Providers**: OpenAI (o1/4o), Anthropic (Claude 3.5 Sonnet), Google (Gemini 2.5 Flash), Mistral, DeepSeek, and Qwen.
-- **Risk Profiles**: Conservative, Balanced, and Aggressive (Persona-driven logic).
+- **Providers (6)**, as configured in `v2/config.py`: OpenAI (`gpt-4o`), Google (`gemini-2.5-flash`), Anthropic (`claude-sonnet-4-6`), Mistral (`mistral-large-latest`), DeepSeek (`deepseek-chat`), and Qwen (`qwen-max`).
+- **Risk Profiles (3)**: Conservative, Balanced, and Aggressive (Persona-driven logic).
+- **Control**: one `random_control` agent that trades randomly, as a skill-vs-luck baseline.
 - **Automation**: Fully autonomous daily execution via **GitHub Actions** at 21:00 UTC (Market Close), with automated state persistence via `git-auto-commit`.
 
 ---
@@ -50,7 +51,7 @@ LLMs operate within a strict sandbox:
 - **Execution**: T+1 opening prices ONLY (pre-computed slippage).
 - **Sizing**: Max 25% ($2,500 on a $10k base) per position.
 - **Mandatory Stops**: Every trade MUST specify a stop-loss (1.5x-2.0x ATR recommended).
-- **Tool Cap**: Max 15 tool calls per turn to ensure deep analysis before `propose_trades`.
+- **Tool Cap**: Max 8 tool calls per turn (`MAX_TOOL_CALLS_PER_AGENT` in `v2/config.py`) before `propose_trades`.
 
 ---
 

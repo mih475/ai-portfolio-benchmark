@@ -20,6 +20,10 @@ Running log of substantive changes made on top of the upstream baseline
   stop fills at the (worse) open rather than the stop price; a gap-up through the
   target fills at the (better) open. The old behaviour overstated performance on
   crash days.
+- **Documentation drift reconciled.** Fixed the roster count (config said "21
+  agents / 7 models"; it's 18 LLM agents over 6 models + 1 random control = 19),
+  the tool-call cap (README said 15; code/config use 8), and README model names
+  now match `config.py` exactly.
 
 ### Fixed
 - **V2 no longer crashes on every run.** `v2/agent_runner.run_agent()` referenced
@@ -30,9 +34,9 @@ Running log of substantive changes made on top of the upstream baseline
   key in `build_mih_snapshot`), not only the serialized TOON prompt payload, so
   the simulator can read fill prices.
 
-### Known issues still open (see repo issues / notes)
+### Known issues still open (see BACKLOG.md)
 - No true historical backtest: the data layer pulls the latest bar and ignores
   `--run-date` for pricing. System is effectively live-forward only.
-- `submit_orders` does not enforce the $3–$50 price universe ("Code is Law" gap).
-- Documentation drift: agent/model counts, tool-call cap, and capital base
-  disagree across README, handover, and config.
+- Each agent fetches prices live inside its own run; a single frozen price set
+  per day would make the roster strictly fair (addressed below — see BACKLOG for
+  verification caveat).

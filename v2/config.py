@@ -150,7 +150,8 @@ class Agent:
         return PROVIDERS.get(self.provider_key)
 
 def _build_agents() -> list[Agent]:
-    """Generate all 21 AI agents (7 models × 3 personas) + 1 random control."""
+    """Generate the roster: 18 LLM agents (6 models x 3 personas) + 1 random
+    control = 19 total. Keep this count in sync with PROVIDERS above."""
     agents = []
     for provider_key, provider in PROVIDERS.items():
         for persona in Persona:
@@ -178,6 +179,7 @@ AGENTS = {a.id: a for a in _build_agents()}
 # ─────────────────────────────────────────────
 
 MAX_TOOL_CALLS_PER_AGENT = 8              # Max incremental tool calls per agent per day
+                                         # (single source of truth; agent_runner reads this)
 
 MCP_TOOLS = {
     "screen_stocks": {
