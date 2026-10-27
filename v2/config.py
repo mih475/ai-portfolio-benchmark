@@ -26,7 +26,8 @@ CURRENCY = "USD"
 @dataclass(frozen=True)
 class SystemRules:
     """Immutable trading rules enforced by the portfolio simulator."""
-    min_stock_price: float = 5.00          # Minimum stock price (excludes penny stocks)
+    min_stock_price: float = 3.00          # Min price — matches documented $3-$50 universe
+    max_stock_price: float = 50.00         # Max price — excludes large/expensive names
     max_position_pct: float = 0.25         # Max 25% of portfolio in one position
     min_position_pct: float = 0.05         # Min 5% of portfolio per trade
     max_positions: int = 15                # Max simultaneous positions

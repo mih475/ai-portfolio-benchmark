@@ -179,10 +179,15 @@ class PortfolioSimulator:
             bar = ohlc_data[ticker]
             low = bar["low"]
             high = bar["high"]
+            open_px = bar.get("open", bar["close"])
 
             # Check STOP-LOSS: triggered if Low ≤ stop_loss_price
             if low <= pos.stop_loss_price:
-                fill_price = pos.stop_loss_price  # Fill at stop price (conservative)
+                # If the bar gapped DOWN through the stop (open below stop), the
+                # realistic fill is the open, not the stop price. Taking the stop
+                # price on a gap-down overstates performance. Fill at the worse of
+                # the two, then apply slippage.
+                fill_price = min(pos.stop_loss_price, open_px)
                 fill_price *= (1 - self.rules.slippage_pct)  # Apply slippage (worse for seller)
 
                 txn = Transaction(
@@ -204,7 +209,9 @@ class PortfolioSimulator:
 
             # Check TAKE-PROFIT: triggered if High ≥ take_profit_price
             if pos.take_profit_price and high >= pos.take_profit_price:
-                fill_price = pos.take_profit_price
+                # If the bar gapped UP through the target (open above TP), the
+                # realistic fill is the better open price, not the TP exactly.
+                fill_price = max(pos.take_profit_price, open_px)
                 fill_price *= (1 - self.rules.slippage_pct)  # Slippage
 
                 txn = Transaction(
@@ -271,6 +278,18 @@ class PortfolioSimulator:
             fill_price = round(fill_price, 4)
 
             if order.action == TradeAction.BUY:
+                # Price-universe firewall ("Code is Law"): only buy within the
+                # documented $3-$50 band. Enforced at the actual fill price, not
+                # at proposal time, since the fill is what we're committing to.
+                min_px = getattr(self.rules, "min_stock_price", 0.0)
+                max_px = getattr(self.rules, "max_stock_price", float("inf"))
+                if fill_price < min_px or fill_price > max_px:
+                    logger.warning(
+                        f"[{self.agent_id}] {ticker} fill ${fill_price:.2f} outside "
+                        f"universe ${min_px:.2f}-${max_px:.2f}, skipping BUY"
+                    )
+                    continue
+
                 # Recalculate shares based on current portfolio value and allocation
                 portfolio_value = self._portfolio_value_at_price(open_prices)
                 target_amount = portfolio_value * (order.allocation_pct / 100)

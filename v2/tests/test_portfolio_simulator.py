@@ -205,6 +205,65 @@ def t_state_roundtrip():
     assert approx(sim2.positions["ABC"].shares, sim.positions["ABC"].shares)
 
 
+# ── Price universe firewall ($3-$50) ──────────────────────────────────────
+
+@test
+def t_reject_buy_below_min_price():
+    sim = new_sim()
+    sim.submit_orders([{"action": "BUY", "ticker": "PENNY", "allocation_pct": 10,
+                        "stop_loss_pct": 10}], "2026-07-01")
+    sim.execute_pending_orders({"PENNY": 2.50}, "2026-07-02")     # below $3
+    assert "PENNY" not in sim.positions
+    assert approx(sim.cash, 10_000.0)                            # no cash spent
+
+
+@test
+def t_reject_buy_above_max_price():
+    sim = new_sim()
+    sim.submit_orders([{"action": "BUY", "ticker": "PRICEY", "allocation_pct": 10,
+                        "stop_loss_pct": 10}], "2026-07-01")
+    sim.execute_pending_orders({"PRICEY": 75.00}, "2026-07-02")  # above $50
+    assert "PRICEY" not in sim.positions
+    assert approx(sim.cash, 10_000.0)
+
+
+@test
+def t_allow_buy_inside_universe():
+    sim = new_sim()
+    sim.submit_orders([{"action": "BUY", "ticker": "OK", "allocation_pct": 10,
+                        "stop_loss_pct": 10}], "2026-07-01")
+    sim.execute_pending_orders({"OK": 25.00}, "2026-07-02")      # inside band
+    assert "OK" in sim.positions
+
+
+# ── Gap-fill realism ──────────────────────────────────────────────────────
+
+@test
+def t_stop_fills_at_open_on_gap_down():
+    sim = new_sim()
+    sim.positions["ABC"] = Position("ABC", 100, 10.0, "2026-07-01", stop_loss_price=9.0,
+                                    current_price=10.0)
+    # Gapped below the stop: open 8.0 < stop 9.0. Fill should be ~open, not the stop.
+    txns = sim.check_stops_and_targets({"ABC": {"open": 8.0, "high": 8.2, "low": 7.5,
+                                                 "close": 7.8}}, "2026-07-02")
+    assert len(txns) == 1
+    assert approx(txns[0].price, round(8.0 * (1 - 0.001), 4)), txns[0].price
+    assert txns[0].price < 9.0                                    # worse than the stop
+
+
+@test
+def t_tp_fills_at_open_on_gap_up():
+    sim = new_sim()
+    sim.positions["ABC"] = Position("ABC", 100, 10.0, "2026-07-01", stop_loss_price=9.0,
+                                    take_profit_price=12.0, current_price=10.0)
+    # Gapped above the target: open 13.0 > tp 12.0. Fill should be ~open (better).
+    txns = sim.check_stops_and_targets({"ABC": {"open": 13.0, "high": 13.4, "low": 12.8,
+                                                 "close": 13.1}}, "2026-07-02")
+    assert len(txns) == 1
+    assert approx(txns[0].price, round(13.0 * (1 - 0.001), 4)), txns[0].price
+    assert txns[0].price > 12.0                                   # better than the target
+
+
 # ─────────────────────────────────────────────────────────────────────────
 def main():
     passed = failed = 0
