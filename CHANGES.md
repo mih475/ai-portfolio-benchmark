@@ -40,6 +40,13 @@ Running log of substantive changes made on top of the upstream baseline
   Added.
 
 ### Changed
+- **Fairness: one frozen price set per trading day.** `run_all_agents` now
+  pre-builds all simulators, fetches the day's OHLC once for the union of every
+  agent's held/queued tickers, and passes that same set to each agent. Agents
+  are therefore priced off identical bars regardless of roster order or the
+  5–15s jitter (previously each agent fetched its own, so later agents could see
+  slightly different data). `run_agent` takes an optional `ohlc_data`; when
+  omitted it still fetches its own (standalone use). Also cuts yfinance calls.
 - **Price universe is now enforced in code** ("Code is Law"): BUY fills outside
   the $3-$50 band are skipped by the simulator. Added `max_stock_price` (50.00)
   and reconciled `min_stock_price` 5.00 → 3.00 to match the documented universe.

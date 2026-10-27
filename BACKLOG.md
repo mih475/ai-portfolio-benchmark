@@ -27,22 +27,13 @@ stay on the live path). Chosen data source: **A — free yfinance history.**
 - **Survivorship/accuracy caveats of free yfinance** (adjusted vs raw prices,
   delisted tickers) — document in the methodology before trusting results.
 
-## 2. Fairness: freeze one price set per trading day (ready to apply)
+## 2. Fairness: freeze one price set per trading day — DONE
 
-**Problem.** Each agent fetches prices live inside its own `run_agent()` call,
-and the roster runs sequentially with a 5–15s jitter. Agents later in the roster
-can see slightly different data. For a post-close run this is minor, but it
-breaks the "all agents see identical data" guarantee.
-
-**Fix.** Fetch the day's OHLC **once** in `run_all_agents()` for the union of all
-agents' held + pending tickers, then pass that shared `ohlc_data` into
-`run_agent(ohlc_data=...)`. Give `run_agent` an optional `ohlc_data` param that
-falls back to the current per-agent fetch when not provided (keeps call sites
-working). Requires: build all simulators first, union their
-`position_tickers + pending order tickers`, one `yf.download`, then loop.
-
-**Why not already committed:** it changes the live execution path and can't be
-verified in the sandbox. Apply + smoke-test together.
+Implemented. `run_all_agents` pre-builds all simulators, fetches the day's OHLC
+once via `price_provider.day_ohlc` for the union of held/queued tickers, and
+passes that frozen set to every `run_agent(ohlc_data=...)`. `run_agent` still
+fetches its own bars when called standalone (ohlc_data=None). Validated by smoke
+run.
 
 ## 3. Stop vs take-profit same-bar ambiguity
 

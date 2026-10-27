@@ -73,33 +73,42 @@ def build_user_prompt(snapshot: dict, portfolio_state: dict) -> str:
     return prompt
 
 
-def run_agent(agent_id: str, snapshot: dict, simulator: PortfolioSimulator):
-    """Run a single agent for the current day."""
+def run_agent(agent_id: str, snapshot: dict, simulator: PortfolioSimulator,
+              ohlc_data: dict | None = None):
+    """Run a single agent for the current day.
+
+    Args:
+        ohlc_data: Optional shared {ticker: {open,high,low,close}} for the day.
+            When provided (by run_all_agents), every agent is priced off the
+            SAME frozen bars — removing any fairness leak from the roster running
+            sequentially with jitter. When None, the agent fetches its own bars
+            (keeps run_agent usable standalone).
+    """
     from .config import AGENTS
-    
+
     if agent_id not in AGENTS:
         logger.error(f"Agent {agent_id} not found in config.")
         return
-        
+
     agent = AGENTS[agent_id]
-    
+
     # 1. Simulator pre-LLM checks (T+1 execution of yesterday's trades, check stops)
-    # Getting today's OHLC and opening prices.
-    # We cheat a bit using the daily snapshot or fetch OHLC locally. 
-    # For now, we fetch OHLC for all tickers in portfolio or pending orders
+    current_date = snapshot["metadata"]["date"]
     tickers_needed = set(simulator.position_tickers + [o.ticker for o in simulator.pending_orders])
 
-    # Fetch the OHLC bar for the simulation date (today when live; the as-of bar
-    # when replaying history). Centralized in price_provider so live vs historical
-    # is decided in one place.
-    from datetime import date as _date
-    from .price_provider import day_ohlc
-    current_date = snapshot["metadata"]["date"]
-    try:
-        as_of = _date.fromisoformat(current_date)
-    except Exception:
-        as_of = None
-    ohlc_data = day_ohlc(tickers_needed, as_of=as_of)
+    if ohlc_data is None:
+        # Standalone path: fetch this agent's own bars for the simulation date
+        # (today when live; the as-of bar when replaying history).
+        from datetime import date as _date
+        from .price_provider import day_ohlc
+        try:
+            as_of = _date.fromisoformat(current_date)
+        except Exception:
+            as_of = None
+        ohlc_data = day_ohlc(tickers_needed, as_of=as_of)
+    else:
+        # Shared bars: use only the subset this agent needs.
+        ohlc_data = {t: ohlc_data[t] for t in tickers_needed if t in ohlc_data}
 
     # Execute simulator's daily tasks BEFORE LLM (so LLM sees accurate EOD portfolio)
     simulator.check_stops_and_targets(ohlc_data, current_date)
@@ -216,14 +225,30 @@ def run_all_agents(snapshot_date: str, agent_ids: list[str] | None = None):
     else:
         agent_ids = list(AGENTS.keys())
 
+    # Pre-build every simulator so we can freeze ONE shared price set for the day.
+    simulators = {
+        aid: PortfolioSimulator(aid, STARTING_CAPITAL, RULES, PORTFOLIOS_DIR)
+        for aid in agent_ids
+    }
+
+    # Fairness: fetch the day's OHLC once for the union of all tickers any agent
+    # holds or has queued, so every agent is priced off identical bars regardless
+    # of roster order or jitter. One fetch also means fewer yfinance calls.
+    from .price_provider import day_ohlc
+    union_tickers = set()
+    for sim in simulators.values():
+        union_tickers.update(sim.position_tickers)
+        union_tickers.update(o.ticker for o in sim.pending_orders)
+    shared_ohlc = day_ohlc(union_tickers, as_of=dt) if union_tickers else {}
+    logger.info(f"Frozen shared price set for {len(shared_ohlc)}/{len(union_tickers)} tickers.")
+
     for i, agent_id in enumerate(agent_ids):
         # Apply Jitter (except for the first one for speed, or always for safety)
         if i > 0:
             delay = random.uniform(5, 15)
             logger.info(f"Roster Jitter: Waiting {delay:.1f}s before starting {agent_id}...")
             time.sleep(delay)
-            
-        simulator = PortfolioSimulator(agent_id, STARTING_CAPITAL, RULES, PORTFOLIOS_DIR)
-        run_agent(agent_id, snapshot, simulator)
+
+        run_agent(agent_id, snapshot, simulators[agent_id], ohlc_data=shared_ohlc)
 
     logger.info("--- DAILY RUN COMPLETE ---")
