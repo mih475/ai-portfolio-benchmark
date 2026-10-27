@@ -9,9 +9,9 @@ on:
   workflow_dispatch:
     inputs:
       agent:
-        description: "Agent id to run (e.g. chatgpt_balanced, claude_balanced, deepseek_balanced)"
+        description: "Agent id to run (e.g. gemini_balanced, chatgpt_balanced, claude_balanced)"
         required: true
-        default: "chatgpt_balanced"
+        default: "gemini_balanced"
       run_date:
         description: "Simulation date (YYYY-MM-DD). Note: pricing currently uses the latest bar regardless."
         required: true
