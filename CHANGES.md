@@ -14,6 +14,15 @@ Running log of substantive changes made on top of the upstream baseline
   gives a one-click (`workflow_dispatch`) single-agent run that uploads its output
   as an artifact instead of committing — cheap end-to-end validation.
 
+### Fixed (surfaced by the first smoke run)
+- **Snapshot build no longer crashes when sector rotation fails.**
+  `fetch_sector_rotation()` returns `{"error": ...}` when its yfinance download
+  fails (e.g. rate-limited on a CI runner); `format_as_toon()` then called
+  `.get()` on that error string and raised `AttributeError`, killing the entire
+  MIH build (and thus any real daily run) before saving anything. It now skips
+  non-dict sector entries and renders a placeholder row. Regression test added
+  (`v2/tests/test_format_as_toon.py`, wired into CI).
+
 ### Fixed (pre-run workflow bugs)
 - **Gemini key mismatch:** code reads `GOOGLE_API_KEY` but the daily workflow only
   passed `GEMINI_API_KEY`. The adapter now accepts either (alias map), and the

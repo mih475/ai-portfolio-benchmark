@@ -418,12 +418,24 @@ def format_as_toon(watchlist: List[Dict[str, Any]], sectors: Dict[str, Any]) -> 
     
     table = "\n".join(rows)
     
-    # Also format Sector RRG for rapid parsing
+    # Also format Sector RRG for rapid parsing. Guard against the failure shapes
+    # fetch_sector_rotation() can return: an {"error": "..."} dict, or a dict whose
+    # values are not per-sector dicts. Only render valid sector entries.
     sector_rows = ["| Sector | Ticker | RS_Ratio | Momentum | Quadrant |", "|---|---|---|---|---|"]
-    for name, data in sectors.items():
-        row = f"| {name} | {data.get('ticker')} | {data.get('rs_ratio')} | {data.get('rs_momentum')} | **{data.get('quadrant')}** |"
-        sector_rows.append(row)
-    
+    valid_sectors = [
+        (name, data) for name, data in (sectors or {}).items()
+        if isinstance(data, dict)
+    ]
+    if valid_sectors:
+        for name, data in valid_sectors:
+            row = (f"| {name} | {data.get('ticker')} | {data.get('rs_ratio')} | "
+                   f"{data.get('rs_momentum')} | **{data.get('quadrant')}** |")
+            sector_rows.append(row)
+    else:
+        reason = sectors.get("error") if isinstance(sectors, dict) else None
+        note = f" ({reason})" if reason else ""
+        sector_rows.append(f"| _No sector rotation data available{note}_ |  |  |  |  |")
+
     sector_table = "\n".join(sector_rows)
     
     return f"### [MODULE 2: SECTOR ROTATION]\n{sector_table}\n\n### [MODULE 3: CATALYST WATCHLIST]\n{table}"
