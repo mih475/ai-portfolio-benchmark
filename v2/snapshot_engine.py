@@ -453,10 +453,18 @@ def build_mih_snapshot(snapshot_date: Optional[date] = None, save_dir: Optional[
     # Point-in-time date for all price windows. For a past date this makes the
     # whole snapshot historical; for today/future it stays on the live path.
     as_of = snapshot_date
+    historical = as_of is not None and as_of < date.today()
 
     # 1. Macro & Narrative
     macro = fetch_macro_data(as_of=as_of)
-    narrative = fetch_market_narrative(snapshot_date)
+    if historical:
+        # Brave search can't be served "as of" a past date, so embedding it would
+        # leak present-day/future news into a historical snapshot. Suppress it.
+        narrative = (f"[Historical backtest for {as_of}: live market narrative "
+                     f"suppressed to avoid look-ahead. Prices and FRED macro are "
+                     f"point-in-time; news/catalysts are not available.]")
+    else:
+        narrative = fetch_market_narrative(snapshot_date)
 
     # 2. Sector Rotation (RRG)
     rotation = fetch_sector_rotation(as_of=as_of)
@@ -472,7 +480,9 @@ def build_mih_snapshot(snapshot_date: Optional[date] = None, save_dir: Optional[
 
     # Sort watchlist by volume to prioritize Top 10 for deep catalyst search
     valid_tickers = [s["Tkr"] for s in watchlist_raw]
-    catalysts = discover_catalysts(valid_tickers)
+    # Catalysts come from live Brave search, which has no point-in-time mode, so
+    # skip it for a historical snapshot (same look-ahead reason as the narrative).
+    catalysts = {} if historical else discover_catalysts(valid_tickers)
     technicals = compute_technicals(valid_tickers, as_of=as_of)
     
     for stock in watchlist_raw:

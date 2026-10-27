@@ -63,10 +63,14 @@ FUNDAMENTALS_TOOL = {
 # Implementations
 # ─────────────────────────────────────────────
 
-def get_technicals(ticker: str, period: str = "3mo") -> dict:
+def get_technicals(ticker: str, period: str = "3mo", as_of=None) -> dict:
     """
     Fetch technical data using yfinance.
-    
+
+    When `as_of` (date/ISO-string) is given, data is bounded to that date so a
+    historical backtest sees technicals as of then rather than today. When None,
+    uses the latest data (live) — unchanged original behaviour.
+
     Returns:
         {
             "ticker": "AAPL",
@@ -89,9 +93,34 @@ def get_technicals(ticker: str, period: str = "3mo") -> dict:
 
     ticker = ticker.upper().strip()
 
+    # Normalize as_of to a date (historical) or None (live).
+    _as_of = None
+    if as_of is not None:
+        from datetime import date as _date, datetime as _dt
+        if isinstance(as_of, str):
+            _as_of = _dt.fromisoformat(as_of).date()
+        elif isinstance(as_of, _dt):
+            _as_of = as_of.date()
+        else:
+            _as_of = as_of
+        if _as_of >= _date.today():
+            _as_of = None  # today/future -> live path
+
     try:
         stock = yf.Ticker(ticker)
-        hist = stock.history(period=period)
+
+        if _as_of is None:
+            # Live path (unchanged): latest `period` of data, plus 1y for 52w range.
+            hist = stock.history(period=period)
+            hist_1y = stock.history(period="1y")
+        else:
+            # Historical path: one bounded window ending at as_of, long enough for
+            # SMA-200 and the 52-week range. Derive both frames from it.
+            from datetime import timedelta
+            start = (_as_of - timedelta(days=420)).isoformat()
+            end = (_as_of + timedelta(days=1)).isoformat()
+            hist = stock.history(start=start, end=end)
+            hist_1y = hist.tail(252)
 
         if hist.empty:
             return {"error": f"No data found for {ticker}", "ticker": ticker}
@@ -108,8 +137,7 @@ def get_technicals(ticker: str, period: str = "3mo") -> dict:
         # RSI-14
         rsi = _calculate_rsi(close, 14)
 
-        # 52-week range (use 1y data)
-        hist_1y = stock.history(period="1y")
+        # 52-week range (hist_1y set above per live/historical branch)
         week_52_high = round(float(hist_1y["High"].max()), 2) if not hist_1y.empty else None
         week_52_low = round(float(hist_1y["Low"].min()), 2) if not hist_1y.empty else None
 

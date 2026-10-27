@@ -20,11 +20,13 @@ stay on the live path). Chosen data source: **A — free yfinance history.**
   Remaining FRED nuance: uses current data vintage, not ALFRED point-in-time
   vintages, so revised series (CPI, UNRATE) show later revisions. Upgrade to
   `get_series_as_of_date` if revision accuracy matters.
-- **News/catalysts (Brave) not yet point-in-time**, and the LLM on-demand tools
-  (`get_macro`, `web_search`, `get_market_news`, `get_technicals`) still return
-  live data during a historical run — a lookahead leak. Fix: a run-level `as_of`
-  context in the `mcp_servers` layer that each tool honors (date-bound or
-  disable news for past dates). This is the next item.
+- **Tool look-ahead — DONE.** Run-level `as_of` context in `mcp_servers`:
+  date-aware tools (`get_macro`, `get_technicals`) get `as_of` injected;
+  present-only tools (`web_search`, `get_market_news`, `fetch_url`,
+  `get_fundamentals`) are disabled on a past date. The MIH snapshot's *narrative*
+  (Brave) and *catalyst watchlist* are also suppressed for a historical snapshot.
+  So a backtest now has point-in-time prices + FRED macro and **no** news/catalyst
+  look-ahead. Remaining: yfinance caching/retry (next item) for reproducibility.
 - **yfinance reliability.** Shared CI IPs get rate-limited (this is what broke
   the first smoke run). Consider retry/backoff + a local on-disk price cache so
   a backtest is reproducible and not re-hitting Yahoo.

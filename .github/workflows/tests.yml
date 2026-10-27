@@ -31,3 +31,6 @@ jobs:
 
       - name: Run FRED point-in-time test
         run: python3 v2/tests/test_fred_asof.py
+
+      - name: Run MCP tool-gating test
+        run: python3 v2/tests/test_tool_gating.py

@@ -6,6 +6,14 @@ Running log of substantive changes made on top of the upstream baseline
 ## Unreleased
 
 ### Added
+- **No tool look-ahead in backtests.** The MCP registry now has a run-level
+  `as_of` context (`set_run_context`), set by the runner to the simulation date.
+  On a *past* date it injects `as_of` into date-aware tools (`get_macro`,
+  `get_technicals`) so they return point-in-time data, and **disables tools that
+  can only return the present** (`web_search`, `get_market_news`, `fetch_url`,
+  `get_fundamentals`) so an agent trading a past date can't read present/future
+  news or valuations. `get_technicals` gained `as_of` bounding. Live/today runs
+  are unaffected. Offline test: `test_tool_gating.py`.
 - **Point-in-time macro (FRED).** `fred_server.execute` takes an `as_of` date and
   ends its observation window there, so a historical snapshot carries that date's
   yields/VIX/Fed-funds instead of today's. Threaded through

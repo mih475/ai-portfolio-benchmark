@@ -5,6 +5,7 @@ and provides the tool definitions for LLM function calling.
 """
 
 import logging
+from datetime import date as _date
 from typing import Any
 
 from . import fred_server
@@ -14,6 +15,36 @@ from . import finnhub_news_server
 from . import stock_data_server
 
 logger = logging.getLogger(__name__)
+
+# ─────────────────────────────────────────────
+# Run-level point-in-time context
+# ─────────────────────────────────────────────
+# Set by the agent runner to the simulation date. When it's a PAST date, the
+# registry makes tools honor it so an agent "trading" that date can't read the
+# present/future:
+#   - date-aware tools get the as_of injected (point-in-time data);
+#   - tools that can only return "now" are disabled (prevents look-ahead).
+# None (or today/future) = live: every tool behaves exactly as before.
+_RUN_AS_OF = None
+
+# Tools that accept an `as_of` kwarg and can serve point-in-time data.
+_ASOF_TOOLS = {"get_macro", "get_technicals"}
+# Tools that can only return present-day data; disabled during a past-date run.
+_LIVE_ONLY_TOOLS = {"web_search", "fetch_url", "get_market_news", "get_fundamentals"}
+
+
+def set_run_context(as_of=None) -> None:
+    """Set (or clear, with None) the simulation date for tool point-in-time behaviour."""
+    global _RUN_AS_OF
+    _RUN_AS_OF = as_of
+
+
+def get_run_as_of():
+    return _RUN_AS_OF
+
+
+def _is_historical() -> bool:
+    return _RUN_AS_OF is not None and _RUN_AS_OF < _date.today()
 
 # ─────────────────────────────────────────────
 # Tool Registry
@@ -65,6 +96,18 @@ def execute_tool(tool_name: str, arguments: dict[str, Any]) -> dict:
     """
     if tool_name not in TOOLS:
         return {"error": f"Unknown tool: {tool_name}. Available: {list(TOOLS.keys())}"}
+
+    # Point-in-time gating for historical (past-date) runs.
+    if _is_historical():
+        if tool_name in _LIVE_ONLY_TOOLS:
+            msg = (f"'{tool_name}' is disabled during a historical backtest "
+                   f"(simulation date {_RUN_AS_OF}) because it can only return "
+                   f"present-day data, which would be look-ahead. Rely on the "
+                   f"snapshot and point-in-time tools instead.")
+            logger.info(f"Blocked look-ahead tool {tool_name} (as_of={_RUN_AS_OF})")
+            return {"disabled": msg, "results": []}
+        if tool_name in _ASOF_TOOLS:
+            arguments = {**arguments, "as_of": _RUN_AS_OF.isoformat()}
 
     tool = TOOLS[tool_name]
     try:

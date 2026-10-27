@@ -204,6 +204,12 @@ def run_all_agents(snapshot_date: str, agent_ids: list[str] | None = None):
     logger.info(f"--- STARTING MIH-DRIVEN DAILY RUN: {snapshot_date} ---")
 
     dt = date.fromisoformat(snapshot_date)
+
+    # Tell the MCP tool layer the simulation date so agents' on-demand tool calls
+    # are point-in-time (and future-leaking tools are disabled) on a past date.
+    from .mcp_servers import set_run_context
+    set_run_context(dt)
+
     # The MIH Snapshot now drives the high-intelligence context
     snapshot = build_mih_snapshot(dt, save_dir=SNAPSHOTS_DIR)
 
@@ -251,4 +257,5 @@ def run_all_agents(snapshot_date: str, agent_ids: list[str] | None = None):
 
         run_agent(agent_id, snapshot, simulators[agent_id], ohlc_data=shared_ohlc)
 
+    set_run_context(None)  # clear point-in-time context after the run
     logger.info("--- DAILY RUN COMPLETE ---")
