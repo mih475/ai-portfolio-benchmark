@@ -142,15 +142,16 @@ def fetch_market_narrative(snapshot_date: date) -> str:
         logger.error(f"Narrative generation failed: {e}")
         return f"Error generating narrative: {e}"
 
-def fetch_sector_rotation() -> Dict[str, Any]:
+def fetch_sector_rotation(as_of: Optional[date] = None) -> Dict[str, Any]:
     """Calculate RRG Rotation (RS-Ratio and RS-Momentum) for 11 sectors."""
     logger.info(f"Calculating Sector Rotation (RRG) - {RRG_WINDOW}d window...")
     try:
-        import yfinance as yf
+        from .price_provider import window_download
         all_tickers = list(SECTOR_ETFS.values()) + [BENCHMARK]
-        
-        # We need historical data for the window + EMA smoothing padding
-        data = yf.download(all_tickers, period="6mo", interval="1d", progress=False)
+
+        # We need historical data for the window + EMA smoothing padding,
+        # ending at as_of (point-in-time when backtesting).
+        data = window_download(all_tickers, as_of=as_of, period="6mo", interval="1d")
         if data.empty:
             return {"error": "Failed to download Sector ETF data."}
             
@@ -250,12 +251,12 @@ def fetch_dynamic_sector_champions(rotations: Dict[str, Any]) -> List[str]:
         logger.error(f"Dynamic discovery failed: {e}")
         return []
 
-def fetch_watchlist_data(tickers: List[str]) -> List[Dict[str, Any]]:
+def fetch_watchlist_data(tickers: List[str], as_of: Optional[date] = None) -> List[Dict[str, Any]]:
     """Download metrics for the watchlist and filter to the top 100."""
     logger.info(f"Downloading metrics for {len(tickers)} tickers...")
     try:
-        import yfinance as yf
-        data = yf.download(tickers, period="5d", progress=False)
+        from .price_provider import window_download
+        data = window_download(tickers, as_of=as_of, period="5d")
         if data.empty: return []
         
         closes = data["Close"].iloc[-1]
@@ -319,13 +320,13 @@ def discover_catalysts(tickers: List[str]) -> Dict[str, str]:
     except:
         return {}
 
-def compute_technicals(tickers: List[str]) -> Dict[str, Dict[str, Any]]:
+def compute_technicals(tickers: List[str], as_of: Optional[date] = None) -> Dict[str, Dict[str, Any]]:
     """Download 90d history for watchlist to compute ATR, RVOL, and SMA flags."""
     logger.info(f"Computing Deep Technicals for {len(tickers)} tickers...")
     try:
-        import yfinance as yf
-        # We need historical data for ATR (14d) and RVOL (20d)
-        data = yf.download(tickers, period="6mo", progress=False)
+        from .price_provider import window_download
+        # We need historical data for ATR (14d) and RVOL (20d), ending at as_of.
+        data = window_download(tickers, as_of=as_of, period="6mo")
         if data.empty: return {}
         
         tech_data = {}
@@ -449,26 +450,30 @@ def build_mih_snapshot(snapshot_date: Optional[date] = None, save_dir: Optional[
         
     logger.info(f"--- BUILDING MIH SNAPSHOT FOR {snapshot_date} ---")
     
+    # Point-in-time date for all price windows. For a past date this makes the
+    # whole snapshot historical; for today/future it stays on the live path.
+    as_of = snapshot_date
+
     # 1. Macro & Narrative
     macro = fetch_macro_data()
     narrative = fetch_market_narrative(snapshot_date)
-    
+
     # 2. Sector Rotation (RRG)
-    rotation = fetch_sector_rotation()
-    
+    rotation = fetch_sector_rotation(as_of=as_of)
+
     # 3. Watchlist & Discover Catalysts
     universe = fetch_watchlist_universe()
-    
+
     # NEW: Dynamic Sector Champion discovery (unbiased alpha)
     champions = fetch_dynamic_sector_champions(rotation)
     universe = list(set(universe + champions))
-    
-    watchlist_raw = fetch_watchlist_data(universe)
-    
+
+    watchlist_raw = fetch_watchlist_data(universe, as_of=as_of)
+
     # Sort watchlist by volume to prioritize Top 10 for deep catalyst search
     valid_tickers = [s["Tkr"] for s in watchlist_raw]
     catalysts = discover_catalysts(valid_tickers)
-    technicals = compute_technicals(valid_tickers)
+    technicals = compute_technicals(valid_tickers, as_of=as_of)
     
     for stock in watchlist_raw:
         tkr = stock["Tkr"]

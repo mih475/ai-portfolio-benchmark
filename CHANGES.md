@@ -6,6 +6,14 @@ Running log of substantive changes made on top of the upstream baseline
 ## Unreleased
 
 ### Added
+- **Historical price layer (`v2/price_provider.py`).** `--run-date` now actually
+  prices off that date. A new `window_download`/`day_ohlc` pair fetches a
+  point-in-time window *ending at* the run date; `snapshot_engine`
+  (sector rotation, watchlist, technicals) and `agent_runner` (daily OHLC) use
+  it instead of calling `yfinance` inline. **Live behaviour is unchanged for
+  today/future dates** — only a *past* run date takes the historical path, so
+  the production daily cron keeps the exact code path validated by the smoke
+  run. Date logic covered by offline tests (`v2/tests/test_price_provider.py`).
 - Offline test suite for the simulator (`v2/tests/test_portfolio_simulator.py`),
   stdlib-only, runnable anywhere. Now 18 tests covering execution, validation,
   stops/TPs, price universe, gap fills, and persistence.

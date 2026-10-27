@@ -9,35 +9,23 @@ or on a local machine — before being trusted.
 
 ---
 
-## 1. Historical backtest support (needs a decision)
+## 1. Historical backtest support — DONE for prices (chose: A, free yfinance)
 
-**Problem.** `v2/snapshot_engine.fetch_watchlist_data()` and the OHLC fetch in
-`v2/agent_runner.run_agent()` both call `yfinance` with `period="1d"`, which
-returns the *latest* bar and ignores the `--run-date` passed on the CLI. So
-`--run-date 2026-04-07` builds a snapshot *labelled* April 7 but priced with
-today's data. The system can therefore only run **forward, live, one real day at
-a time** (which is how the GitHub Actions cron uses it). Reproducible historical
-backtests are not possible as written.
+**Status.** Implemented in `v2/price_provider.py`. `--run-date` now fetches a
+point-in-time price window ending at that date (past dates only; today/future
+stay on the live path). Chosen data source: **A — free yfinance history.**
 
-**Decision needed from you — the data source:**
-- **A. `yfinance` history (free).** Fetch the specific date's OHLC via
-  `yf.download(tickers, start=date, end=date+1d)`. Zero cost, but rate-limited
-  and occasionally gappy; fine for modest backtests.
-- **B. A paid data vendor** (Polygon, Tiingo, Alpaca market data, etc.). More
-  reliable and point-in-time correct, but adds a key + cost.
-- **C. Keep it live-only** and drop the `--run-date` pretense (make the CLI
-  reflect that it always runs "today").
-
-**Sketch once a source is chosen:** introduce a small `PriceProvider` interface
-with `get_ohlc(tickers, date) -> {ticker: {open,high,low,close}}` and
-`get_prices(tickers, date) -> {ticker: price}`; implement `LivePriceProvider`
-(current behaviour) and `HistoricalPriceProvider` (date-aware). `snapshot_engine`
-and `agent_runner` take a provider instead of calling `yfinance` inline. This
-also removes the duplicated fetch logic.
-
-> Note: a genuine point-in-time snapshot also needs the *watchlist membership*,
-> catalysts, and macro series as-of the date — not just prices. True historical
-> replay is a larger effort than just swapping the price call; scope accordingly.
+**Still open under this item:**
+- **Non-price data is not yet point-in-time.** The macro narrative (Brave),
+  FRED series, and the catalyst watchlist are still fetched "as of now", so a
+  historical run has correct *prices* but present-day *news/macro*. For a clean
+  backtest these should also be date-bounded (FRED supports observation dates;
+  Brave/catalysts are harder and may need to be disabled or cached per date).
+- **yfinance reliability.** Shared CI IPs get rate-limited (this is what broke
+  the first smoke run). Consider retry/backoff + a local on-disk price cache so
+  a backtest is reproducible and not re-hitting Yahoo.
+- **Survivorship/accuracy caveats of free yfinance** (adjusted vs raw prices,
+  delisted tickers) — document in the methodology before trusting results.
 
 ## 2. Fairness: freeze one price set per trading day (ready to apply)
 

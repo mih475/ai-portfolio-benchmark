@@ -88,33 +88,20 @@ def run_agent(agent_id: str, snapshot: dict, simulator: PortfolioSimulator):
     # We cheat a bit using the daily snapshot or fetch OHLC locally. 
     # For now, we fetch OHLC for all tickers in portfolio or pending orders
     tickers_needed = set(simulator.position_tickers + [o.ticker for o in simulator.pending_orders])
-    
-    # Needs to fetch actual prices for today
-    import yfinance as yf
-    
-    ohlc_data = {}
-    if tickers_needed:
-        # Download today's specific bar (simulated)
-        data = yf.download(list(tickers_needed), period="1d", progress=False)
-        if not data.empty:
-            for tkr in tickers_needed:
-                try:
-                    # Multi-index or single ticker check
-                    if len(tickers_needed) > 1:
-                        row = data.xs(tkr, level=1, axis=1).iloc[-1]
-                    else:
-                        row = data.iloc[-1]
-                        
-                    ohlc_data[tkr] = {
-                        "open": float(row["Open"]),
-                        "high": float(row["High"]),
-                        "low": float(row["Low"]),
-                        "close": float(row["Close"])
-                    }
-                except: continue
+
+    # Fetch the OHLC bar for the simulation date (today when live; the as-of bar
+    # when replaying history). Centralized in price_provider so live vs historical
+    # is decided in one place.
+    from datetime import date as _date
+    from .price_provider import day_ohlc
+    current_date = snapshot["metadata"]["date"]
+    try:
+        as_of = _date.fromisoformat(current_date)
+    except Exception:
+        as_of = None
+    ohlc_data = day_ohlc(tickers_needed, as_of=as_of)
 
     # Execute simulator's daily tasks BEFORE LLM (so LLM sees accurate EOD portfolio)
-    current_date = snapshot["metadata"]["date"]
     simulator.check_stops_and_targets(ohlc_data, current_date)
 
     # Build fill/mark prices for the tickers we actually hold or have queued.
