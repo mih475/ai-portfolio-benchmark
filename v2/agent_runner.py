@@ -135,7 +135,12 @@ def run_agent(agent_id: str, snapshot: dict, simulator: PortfolioSimulator,
     # Random agent bypasses LLM logic entirely
     if agent.id == "random_control":
         from .random_agent import execute_random_trades
-        result_json = json.dumps(execute_random_trades(simulator.get_portfolio_summary()))
+        # Draw from the same daily $3-$50 watchlist the LLM agents see, so the
+        # control shares their opportunity set and its buys pass the price firewall.
+        wl_tickers = [s["Tkr"] for s in snapshot.get("watchlist", []) if s.get("Tkr")]
+        result_json = json.dumps(
+            execute_random_trades(simulator.get_portfolio_summary(), universe=wl_tickers)
+        )
     else:
         # Load agent's Day 0 playbook
         from .config import PLAYBOOKS_DIR

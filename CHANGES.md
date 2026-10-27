@@ -53,6 +53,13 @@ Running log of substantive changes made on top of the upstream baseline
   gives a one-click (`workflow_dispatch`) single-agent run that uploads its output
   as an artifact instead of committing — cheap end-to-end validation.
 
+### Fixed (random control couldn't trade under the enforced universe)
+- The random control's hardcoded universe was all big-caps (SPY/AAPL/…) priced
+  above $50, so the $3–$50 price firewall rejected every buy and it sat at
+  exactly $10,000 with no positions. It now draws from the **same daily MIH
+  watchlist** the LLM agents use (a fairer control on the same opportunity set),
+  with a $3–$50 fallback list. Offline test added.
+
 ### Fixed (surfaced by the Tier-1 backtest — agents researched but never traded)
 - **Hide disabled tools from the model in historical runs.** The look-ahead
   gating disabled tools at call time but still *offered* them, so Gemini kept

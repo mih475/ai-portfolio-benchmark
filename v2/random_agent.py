@@ -12,21 +12,30 @@ from typing import Dict
 
 logger = logging.getLogger(__name__)
 
-# A predefined universe of standard liquid stocks/ETFs for the random agent
-UNIVERSE = [
-    "SPY", "QQQ", "IWM", "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", 
-    "META", "TSLA", "BRK.B", "UNH", "JNJ", "XOM", "JPM", "V", "PG", 
-    "MA", "COST", "HD", "ABBV", "MRK", "CVX", "PEP", "KO", "BAC", 
-    "PFE", "TMO", "CSCO", "MCD", "DIS", "WMT", "AMD", "NFLX"
+# Fallback universe ONLY used if no daily watchlist is supplied. These are
+# chosen to sit inside the simulator's $3-$50 long-only universe; big-cap names
+# (SPY/AAPL/etc.) are deliberately excluded because the "Code is Law" price
+# firewall would reject every buy outside $3-$50, leaving the control unable to
+# trade. Prefer passing the day's MIH watchlist (same opportunity set as the
+# LLM agents) via the `universe` argument.
+FALLBACK_UNIVERSE = [
+    "SOFI", "PLUG", "CHPT", "BLNK", "RIVN", "LCID", "F", "SNAP", "HOOD",
+    "RIOT", "MARA", "CLSK", "PTON", "OPEN", "AFRM", "UPST", "WBD",
 ]
 
-def execute_random_trades(portfolio_state: Dict) -> Dict:
+def execute_random_trades(portfolio_state: Dict, universe=None) -> Dict:
     """
     Generate random trades adhering to system constraints.
     - Max 15 positions
     - Tries to stay mostly invested over time
     - Random stop losses
+
+    Args:
+        universe: candidate tickers to buy from (the day's MIH watchlist when
+            available, so the control shares the LLM agents' opportunity set and
+            stays inside the $3-$50 universe). Falls back to FALLBACK_UNIVERSE.
     """
+    universe = [t for t in (universe or []) if t] or FALLBACK_UNIVERSE
     cash = portfolio_state["cash"]
     positions = portfolio_state["positions"]  # This is a list of dicts
     
@@ -56,7 +65,7 @@ def execute_random_trades(portfolio_state: Dict) -> Dict:
         # Get list of existing tickers string
         existing_tickers = [p["ticker"] for p in positions]
         
-        candidates = [t for t in UNIVERSE if t not in existing_tickers]
+        candidates = [t for t in universe if t not in existing_tickers]
         random.shuffle(candidates)
         
         for i in range(num_buys):

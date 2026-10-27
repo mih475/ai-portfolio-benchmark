@@ -37,3 +37,6 @@ jobs:
 
       - name: Run backtest range + summary test
         run: python3 v2/tests/test_backtest.py
+
+      - name: Run random control agent test
+        run: python3 v2/tests/test_random_agent.py
