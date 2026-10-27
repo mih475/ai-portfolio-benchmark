@@ -482,6 +482,10 @@ def build_mih_snapshot(snapshot_date: Optional[date] = None, save_dir: Optional[
             "version": "V2-MIH-2026",
             "is_market_day": is_market_day(snapshot_date)
         },
+        # Machine-readable watchlist (list of dicts with at least "Tkr" and "Price").
+        # Exposed so the simulator/runner can source fill & mark prices without
+        # re-parsing the TOON prompt payload. See agent_runner.run_agent().
+        "watchlist": watchlist_raw,
         "module_1_macro": {
             "narrative": narrative,
             "indicators": macro

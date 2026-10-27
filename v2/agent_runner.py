@@ -13,7 +13,7 @@ import random
 import time
 from pathlib import Path
 
-from .config import AGENTS, RULES, PERSONA_MODIFIERS
+from .config import AGENTS, RULES, PERSONA_MODIFIERS, MAX_TOOL_CALLS_PER_AGENT
 from .mcp_servers import get_tool_definitions
 from .api_adapters import UnifiedLLMClient
 from .portfolio_simulator import PortfolioSimulator
@@ -116,11 +116,25 @@ def run_agent(agent_id: str, snapshot: dict, simulator: PortfolioSimulator):
     # Execute simulator's daily tasks BEFORE LLM (so LLM sees accurate EOD portfolio)
     current_date = snapshot["metadata"]["date"]
     simulator.check_stops_and_targets(ohlc_data, current_date)
-    
-    # For open prices, we assume 'Price' from fetch_watchlist_data is most recent/open
-    open_prices = {s["Tkr"]: s["Price"] for s in ohlc_raw}
+
+    # Build fill/mark prices for the tickers we actually hold or have queued.
+    # Primary source: the per-ticker OHLC bars fetched above.
+    # Fallback source: the MIH snapshot watchlist ("Tkr" -> "Price"), in case a
+    # held ticker has dropped out of the live OHLC pull.
+    watchlist_prices = {
+        s["Tkr"]: s["Price"]
+        for s in snapshot.get("watchlist", [])
+        if s.get("Tkr") and s.get("Price") is not None
+    }
+    open_prices = {tkr: bar["open"] for tkr, bar in ohlc_data.items()}
+    close_prices = {tkr: bar["close"] for tkr, bar in ohlc_data.items()}
+    for tkr, price in watchlist_prices.items():
+        open_prices.setdefault(tkr, price)
+        close_prices.setdefault(tkr, price)
+
+    # T+1 fills happen at the session open; mark-to-market uses the session close.
     simulator.execute_pending_orders(open_prices, current_date)
-    simulator.mark_to_market(open_prices, current_date)
+    simulator.mark_to_market(close_prices, current_date)
 
     # Random agent bypasses LLM logic entirely
     if agent.id == "random_control":
@@ -154,7 +168,7 @@ def run_agent(agent_id: str, snapshot: dict, simulator: PortfolioSimulator):
         
         client = UnifiedLLMClient(agent.provider)
         try:
-            result_json = client.generate(sys_prompt, user_prompt, tools, max_tool_calls=15)
+            result_json = client.generate(sys_prompt, user_prompt, tools, max_tool_calls=MAX_TOOL_CALLS_PER_AGENT)
         except Exception as e:
             logger.error(f"Agent {agent_id} crashed: {e}")
             result_json = ""
