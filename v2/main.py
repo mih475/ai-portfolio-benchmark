@@ -28,6 +28,10 @@ def main():
     parser.add_argument("--agents", type=str, default=None,
                         help="Comma-separated agent ids to run instead of the full roster "
                              "(e.g. 'chatgpt_balanced'). Useful for a single-agent smoke test.")
+    parser.add_argument("--start-date", type=str, default=None,
+                        help="Backtest start date YYYY-MM-DD (use with --end-date).")
+    parser.add_argument("--end-date", type=str, default=None,
+                        help="Backtest end date YYYY-MM-DD (inclusive; use with --start-date).")
 
     args = parser.parse_args()
     agent_ids = [a.strip() for a in args.agents.split(",")] if args.agents else None
@@ -44,9 +48,14 @@ def main():
         from v2.meta_strategy import generate_playbooks
         generate_playbooks()
         
-    # Always run the daily loop unless ONLY export or Day 0 was intended
-    # If they specify a run date, we run it. If default, run it.
-    if not args.day_0 and not args.export:
+    # Multi-day backtest: iterate the date range in order (state carries across days).
+    if args.start_date and args.end_date:
+        logger.info(f"Running backtest {args.start_date}..{args.end_date}...")
+        from v2.backtest import run_backtest
+        run_backtest(args.start_date, args.end_date, agent_ids=agent_ids)
+        args.export = True
+    # Single-day run (default) unless only export or Day 0 was intended.
+    elif not args.day_0 and not args.export:
         logger.info(f"Running daily loop for {args.run_date}...")
         from v2.agent_runner import run_all_agents
         run_all_agents(args.run_date, agent_ids=agent_ids)

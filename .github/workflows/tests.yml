@@ -34,3 +34,6 @@ jobs:
 
       - name: Run MCP tool-gating test
         run: python3 v2/tests/test_tool_gating.py
+
+      - name: Run backtest range + summary test
+        run: python3 v2/tests/test_backtest.py

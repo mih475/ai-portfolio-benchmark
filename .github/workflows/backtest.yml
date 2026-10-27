@@ -1,0 +1,68 @@
+name: Backtest (date range)
+
+# Runs the roster over a date range in one job (state carries across days),
+# then prints a leaderboard and uploads all results as an artifact. Nothing is
+# committed back to the repo. Default roster = 3 Gemini personas + random
+# control, which is free on the Gemini free tier.
+
+on:
+  workflow_dispatch:
+    inputs:
+      start_date:
+        description: "Backtest start date (YYYY-MM-DD, a past weekday)"
+        required: true
+        default: "2026-04-06"
+      end_date:
+        description: "Backtest end date (YYYY-MM-DD, inclusive)"
+        required: true
+        default: "2026-04-10"
+      agents:
+        description: "Comma-separated agent ids"
+        required: true
+        default: "gemini_conservative,gemini_balanced,gemini_aggressive,random_control"
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r v2/requirements.txt
+
+      - name: Run backtest
+        env:
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+          FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python -m v2.main \
+            --start-date "${{ inputs.start_date }}" \
+            --end-date "${{ inputs.end_date }}" \
+            --agents "${{ inputs.agents }}"
+
+      - name: Summarize results
+        if: always()
+        run: python3 v2/scripts/summarize_backtest.py
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backtest-results
+          path: |
+            v2/data/portfolios/*.json
+            v2/data/portfolios/summary.md
+            v2/data/snapshots/*.json
+          if-no-files-found: warn

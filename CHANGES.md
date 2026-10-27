@@ -6,6 +6,14 @@ Running log of substantive changes made on top of the upstream baseline
 ## Unreleased
 
 ### Added
+- **Multi-day backtest.** `v2/backtest.py` iterates a date range in order within
+  one process so portfolio state carries day to day; `--start-date/--end-date`
+  on `v2/main.py` drive it. `v2/scripts/summarize_backtest.py` prints a
+  leaderboard (final value, cumulative return, max drawdown) from the persisted
+  state and writes `summary.md`. New `.github/workflows/backtest.yml` runs a
+  range on dispatch (default: 3 Gemini personas + random control, free tier) and
+  uploads results as an artifact — nothing committed. Offline tests cover date
+  iteration and the summary math.
 - **yfinance retry + historical disk cache.** `price_provider.window_download`
   now retries transient Yahoo failures (empty frames / rate-limits — the thing
   that broke the first smoke run) with exponential backoff + jitter, and caches
