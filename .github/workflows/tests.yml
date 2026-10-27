@@ -28,3 +28,6 @@ jobs:
 
       - name: Run price_provider date-logic test
         run: python3 v2/tests/test_price_provider.py
+
+      - name: Run FRED point-in-time test
+        run: python3 v2/tests/test_fred_asof.py

@@ -92,13 +92,13 @@ def is_market_day(check_date: Optional[date] = None) -> bool:
             check_date = date.today()
         return check_date.weekday() < 5
 
-def fetch_macro_data() -> Dict[str, Any]:
-    """Fetch Treasury yields and Credit Spreads from FRED."""
+def fetch_macro_data(as_of: Optional[date] = None) -> Dict[str, Any]:
+    """Fetch Treasury yields and Credit Spreads from FRED (point-in-time when as_of set)."""
     logger.info("Fetching Macro data from FRED...")
     try:
         from .mcp_servers.fred_server import execute as fred_execute
         series_ids = list(FRED_SERIES.values())
-        raw_data = fred_execute(series_ids)
+        raw_data = fred_execute(series_ids, as_of=as_of)
         
         # Map back to readable keys
         # The fred_execute returns a summary and raw dict
@@ -455,7 +455,7 @@ def build_mih_snapshot(snapshot_date: Optional[date] = None, save_dir: Optional[
     as_of = snapshot_date
 
     # 1. Macro & Narrative
-    macro = fetch_macro_data()
+    macro = fetch_macro_data(as_of=as_of)
     narrative = fetch_market_narrative(snapshot_date)
 
     # 2. Sector Rotation (RRG)

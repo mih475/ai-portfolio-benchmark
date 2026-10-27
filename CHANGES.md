@@ -6,6 +6,14 @@ Running log of substantive changes made on top of the upstream baseline
 ## Unreleased
 
 ### Added
+- **Point-in-time macro (FRED).** `fred_server.execute` takes an `as_of` date and
+  ends its observation window there, so a historical snapshot carries that date's
+  yields/VIX/Fed-funds instead of today's. Threaded through
+  `fetch_macro_data(as_of=...)` and `build_mih_snapshot`. (Uses current-vintage
+  observation-date filtering, not ALFRED vintages — fine for market-rate series;
+  revised series like CPI reflect later revisions. Noted in BACKLOG.) The LLM's
+  on-demand `get_macro` tool still returns live data — that tool-path lookahead
+  is handled next with news/catalysts. Offline test: `test_fred_asof.py`.
 - **Historical price layer (`v2/price_provider.py`).** `--run-date` now actually
   prices off that date. A new `window_download`/`day_ohlc` pair fetches a
   point-in-time window *ending at* the run date; `snapshot_engine`

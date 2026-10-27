@@ -16,11 +16,15 @@ point-in-time price window ending at that date (past dates only; today/future
 stay on the live path). Chosen data source: **A — free yfinance history.**
 
 **Still open under this item:**
-- **Non-price data is not yet point-in-time.** The macro narrative (Brave),
-  FRED series, and the catalyst watchlist are still fetched "as of now", so a
-  historical run has correct *prices* but present-day *news/macro*. For a clean
-  backtest these should also be date-bounded (FRED supports observation dates;
-  Brave/catalysts are harder and may need to be disabled or cached per date).
+- **FRED macro — DONE** for the snapshot path (`as_of` observation-date window).
+  Remaining FRED nuance: uses current data vintage, not ALFRED point-in-time
+  vintages, so revised series (CPI, UNRATE) show later revisions. Upgrade to
+  `get_series_as_of_date` if revision accuracy matters.
+- **News/catalysts (Brave) not yet point-in-time**, and the LLM on-demand tools
+  (`get_macro`, `web_search`, `get_market_news`, `get_technicals`) still return
+  live data during a historical run — a lookahead leak. Fix: a run-level `as_of`
+  context in the `mcp_servers` layer that each tool honors (date-bound or
+  disable news for past dates). This is the next item.
 - **yfinance reliability.** Shared CI IPs get rate-limited (this is what broke
   the first smoke run). Consider retry/backoff + a local on-disk price cache so
   a backtest is reproducible and not re-hitting Yahoo.

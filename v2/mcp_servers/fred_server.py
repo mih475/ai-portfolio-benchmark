@@ -81,10 +81,16 @@ INDICATOR_LABELS = {
 # Tool Implementation
 # ─────────────────────────────────────────────
 
-def execute(indicators: Optional[list[str]] = None) -> dict:
+def execute(indicators: Optional[list[str]] = None, as_of=None) -> dict:
     """
     Fetch macro indicators from FRED.
-    
+
+    Args:
+        indicators: FRED series IDs (defaults to DGS10/VIXCLS/DFF).
+        as_of: optional date/datetime/ISO-string. When given, the window ENDS at
+            that date so a historical run gets the value as of that date rather
+            than today's. When None, uses the latest available (live).
+
     Returns:
         {
             "indicators": {
@@ -93,6 +99,10 @@ def execute(indicators: Optional[list[str]] = None) -> dict:
             },
             "summary": "10Y yield at 4.25%, VIX at 15.3 (low fear), Fed rate at 5.25%"
         }
+
+    Note: this uses the current data vintage filtered by observation date, not
+    ALFRED point-in-time vintages, so revised series (CPI, UNRATE) reflect later
+    revisions. Fine for market-rate series (yields/VIX/Fed funds).
     """
     if indicators is None:
         indicators = ["DGS10", "VIXCLS", "DFF"]
@@ -101,8 +111,16 @@ def execute(indicators: Optional[list[str]] = None) -> dict:
     results = {}
     summaries = []
 
-    end_date = datetime.now()
-    start_date = end_date - timedelta(days=30)  # Look back 30 days for latest data
+    # Resolve the window end to as_of (point-in-time) or now (live).
+    if as_of is None:
+        end_date = datetime.now()
+    elif isinstance(as_of, str):
+        end_date = datetime.fromisoformat(as_of)
+    elif isinstance(as_of, datetime):
+        end_date = as_of
+    else:  # a date
+        end_date = datetime(as_of.year, as_of.month, as_of.day)
+    start_date = end_date - timedelta(days=45)  # look back far enough for weekly/monthly series
 
     for series_id in indicators:
         try:
