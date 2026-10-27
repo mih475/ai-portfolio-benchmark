@@ -11,11 +11,11 @@ on:
       start_date:
         description: "Backtest start date (YYYY-MM-DD, a past weekday)"
         required: true
-        default: "2026-04-06"
+        default: "2026-04-01"
       end_date:
         description: "Backtest end date (YYYY-MM-DD, inclusive)"
         required: true
-        default: "2026-04-10"
+        default: "2026-04-30"
       agents:
         description: "Comma-separated agent ids"
         required: true
