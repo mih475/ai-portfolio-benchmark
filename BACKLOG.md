@@ -26,12 +26,13 @@ stay on the live path). Chosen data source: **A — free yfinance history.**
   `get_fundamentals`) are disabled on a past date. The MIH snapshot's *narrative*
   (Brave) and *catalyst watchlist* are also suppressed for a historical snapshot.
   So a backtest now has point-in-time prices + FRED macro and **no** news/catalyst
-  look-ahead. Remaining: yfinance caching/retry (next item) for reproducibility.
-- **yfinance reliability.** Shared CI IPs get rate-limited (this is what broke
-  the first smoke run). Consider retry/backoff + a local on-disk price cache so
-  a backtest is reproducible and not re-hitting Yahoo.
+  look-ahead.
+- **yfinance reliability — DONE.** `window_download` retries transient failures
+  with backoff and caches historical windows to `v2/data/price_cache/` (keyed by
+  tickers+date+period). Reproducible backtests; no re-hitting Yahoo on reruns.
 - **Survivorship/accuracy caveats of free yfinance** (adjusted vs raw prices,
-  delisted tickers) — document in the methodology before trusting results.
+  delisted tickers) — still to document in the methodology before trusting
+  results. This is the main remaining validity caveat.
 
 ## 2. Fairness: freeze one price set per trading day — DONE
 

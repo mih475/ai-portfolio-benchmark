@@ -6,6 +6,13 @@ Running log of substantive changes made on top of the upstream baseline
 ## Unreleased
 
 ### Added
+- **yfinance retry + historical disk cache.** `price_provider.window_download`
+  now retries transient Yahoo failures (empty frames / rate-limits — the thing
+  that broke the first smoke run) with exponential backoff + jitter, and caches
+  *historical* windows to `v2/data/price_cache/` keyed by (tickers, as_of,
+  period, interval). Backtests become reproducible and stop re-hitting Yahoo on
+  reruns; live/today windows are never cached. Opt out with `PRICE_CACHE=0`.
+  Offline tests cover retry recovery/exhaustion and cache-key behaviour.
 - **No tool look-ahead in backtests.** The MCP registry now has a run-level
   `as_of` context (`set_run_context`), set by the runner to the simulation date.
   On a *past* date it injects `as_of` into date-aware tools (`get_macro`,
