@@ -1,5 +1,13 @@
 # AI Portfolio Experiment (V2): Automated Agentic LLM Study
 
+> **Fork notice.** This is an independent, modified continuation of
+> [Seve1995/ai-portfolio-experiment](https://github.com/Seve1995/ai-portfolio-experiment)
+> (MIT). It is **not** affiliated with or endorsed by the original author.
+> See [`ATTRIBUTION.md`](ATTRIBUTION.md) for credit and [`CHANGES.md`](CHANGES.md)
+> for what this fork changes. Some claims below are inherited from upstream and
+> are being corrected — treat the README as aspirational until `CHANGES.md` says a
+> feature is verified.
+
 A high-fidelity project for benchmarking the financial decision-making of **18 autonomous AI agents** (6 models × 3 personas) in a deterministic, rules-based trading simulation.
 
 ## 🚀 The 2026 Architectural Evolution: "Institutional Intelligence"
