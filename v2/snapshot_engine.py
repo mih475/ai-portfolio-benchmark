@@ -222,8 +222,22 @@ def fetch_watchlist_universe() -> List[str]:
         "AFRM", "UPST", "CVNA", "CHPT", "BLNK", "BE", "PLUG", "LCID", "RIVN", "QS",
         "COIN", "HOOD", "DKNG", "PENN", "PAGS", "STNE", "NU", "SE", "MELI", "SHOP"
     ]
-    # We add more dynamically if needed
-    return core_tickers
+    # Sanitize: drop non-ticker junk and de-duplicate while preserving order.
+    # A valid US ticker here is 1-5 uppercase letters. Also drop a small set of
+    # known contaminants — company words that slipped in whose real symbols are
+    # already present ("Airbnb"->ABNB, "Unity"->U).
+    import re
+    _NON_TICKERS = {"AIRBNB", "UNITY"}
+    seen = set()
+    cleaned = []
+    for t in core_tickers:
+        t = t.strip().upper()
+        if not re.fullmatch(r"[A-Z]{1,5}", t) or t in _NON_TICKERS:
+            continue
+        if t not in seen:
+            seen.add(t)
+            cleaned.append(t)
+    return cleaned
 
 def fetch_dynamic_sector_champions(rotations: Dict[str, Any]) -> List[str]:
     """Identify the top sectors from RRG analysis and return their 'Champion' holdings."""
