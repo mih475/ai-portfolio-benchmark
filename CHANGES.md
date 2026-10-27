@@ -53,6 +53,13 @@ Running log of substantive changes made on top of the upstream baseline
   gives a one-click (`workflow_dispatch`) single-agent run that uploads its output
   as an artifact instead of committing — cheap end-to-end validation.
 
+### Fixed (surfaced by the first backtest)
+- **Gemini model id updated `gemini-2.5-flash` → `gemini-3.8-flash`.** The old id
+  was retired by Google and returns 404 for new users, so every Gemini agent
+  crashed and proposed nothing (first backtest: all three ended at exactly
+  $10,000 while the keyless random_control traded normally — confirming the
+  engine works and only the model name was stale).
+
 ### Fixed (surfaced by the first smoke run)
 - **Snapshot build no longer crashes when sector rotation fails.**
   `fetch_sector_rotation()` returns `{"error": ...}` when its yfinance download

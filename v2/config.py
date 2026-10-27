@@ -99,7 +99,7 @@ PROVIDERS = {
     ),
     "gemini": LLMProvider(
         name="Gemini",
-        model_id="gemini-2.5-flash",
+        model_id="gemini-3.8-flash",   # gemini-2.5-flash was retired (404 for new users)
         api_type="google",
         api_key_env="GOOGLE_API_KEY",
     ),
