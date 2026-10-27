@@ -193,25 +193,42 @@ def run_agent(agent_id: str, snapshot: dict, simulator: PortfolioSimulator):
     simulator.save_snapshot_history()
 
 
-def run_all_agents(snapshot_date: str):
-    """Main entry point for running all agents on a specific date."""
+def run_all_agents(snapshot_date: str, agent_ids: list[str] | None = None):
+    """Main entry point for running agents on a specific date.
+
+    Args:
+        snapshot_date: ISO date string.
+        agent_ids: Optional subset of agent ids to run (e.g. for a single-agent
+            smoke test). When None, the full roster runs.
+    """
     from .snapshot_engine import build_mih_snapshot
     from datetime import date
     from .config import AGENTS, STARTING_CAPITAL, RULES, PORTFOLIOS_DIR, SNAPSHOTS_DIR
-    
+
     logger.info(f"--- STARTING MIH-DRIVEN DAILY RUN: {snapshot_date} ---")
-    
+
     dt = date.fromisoformat(snapshot_date)
     # The MIH Snapshot now drives the high-intelligence context
     snapshot = build_mih_snapshot(dt, save_dir=SNAPSHOTS_DIR)
-    
+
     # Metadata structure changed in V2
     if not snapshot.get("metadata", {}).get("is_market_day", True):
         logger.info(f"{snapshot_date} is not a market day. Skipping.")
         return
-        
-    # Run agents
-    agent_ids = list(AGENTS.keys())
+
+    # Run agents (optionally a subset for smoke tests)
+    if agent_ids:
+        unknown = [a for a in agent_ids if a not in AGENTS]
+        if unknown:
+            logger.error(f"Unknown agent id(s): {unknown}. Valid: {list(AGENTS.keys())}")
+        agent_ids = [a for a in agent_ids if a in AGENTS]
+        if not agent_ids:
+            logger.error("No valid agents to run; aborting.")
+            return
+        logger.info(f"Running subset of {len(agent_ids)} agent(s): {agent_ids}")
+    else:
+        agent_ids = list(AGENTS.keys())
+
     for i, agent_id in enumerate(agent_ids):
         # Apply Jitter (except for the first one for speed, or always for safety)
         if i > 0:

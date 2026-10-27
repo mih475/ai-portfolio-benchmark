@@ -52,9 +52,24 @@ def retry_with_backoff(func: Callable, max_retries: int = 5, base_delay: float =
     return wrapper
 
 class UnifiedLLMClient:
+    # Some providers are commonly configured under more than one env-var name.
+    # Accept either so a run doesn't silently fail on a naming mismatch
+    # (e.g. GOOGLE_API_KEY vs GEMINI_API_KEY).
+    _KEY_ALIASES = {
+        "GOOGLE_API_KEY": ["GEMINI_API_KEY"],
+        "ANTHROPIC_API_KEY": ["CLAUDE_API_KEY"],
+    }
+
     def __init__(self, provider: LLMProvider):
         self.provider = provider
         self.api_key = os.getenv(provider.api_key_env)
+        if not self.api_key:
+            for alias in self._KEY_ALIASES.get(provider.api_key_env, []):
+                self.api_key = os.getenv(alias)
+                if self.api_key:
+                    logger.info(f"Using {alias} for {provider.name} "
+                                f"(primary {provider.api_key_env} not set).")
+                    break
         if not self.api_key:
             logger.warning(f"Key {provider.api_key_env} not found. Agent may fail.")
             

@@ -25,8 +25,12 @@ def main():
     parser.add_argument("--day-0", action="store_true", help="Generate Day 0 Playbooks")
     parser.add_argument("--run-date", type=str, default=date.today().isoformat(), help="Simulation date YYYY-MM-DD")
     parser.add_argument("--export", action="store_true", help="Export to Dashboard format")
-    
+    parser.add_argument("--agents", type=str, default=None,
+                        help="Comma-separated agent ids to run instead of the full roster "
+                             "(e.g. 'chatgpt_balanced'). Useful for a single-agent smoke test.")
+
     args = parser.parse_args()
+    agent_ids = [a.strip() for a in args.agents.split(",")] if args.agents else None
     
     # Needs dotenv to load keys
     try:
@@ -45,7 +49,7 @@ def main():
     if not args.day_0 and not args.export:
         logger.info(f"Running daily loop for {args.run_date}...")
         from v2.agent_runner import run_all_agents
-        run_all_agents(args.run_date)
+        run_all_agents(args.run_date, agent_ids=agent_ids)
         # Auto-export after a run
         args.export = True
         

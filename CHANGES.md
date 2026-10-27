@@ -9,6 +9,18 @@ Running log of substantive changes made on top of the upstream baseline
 - Offline test suite for the simulator (`v2/tests/test_portfolio_simulator.py`),
   stdlib-only, runnable anywhere. Now 18 tests covering execution, validation,
   stops/TPs, price universe, gap fills, and persistence.
+- **Single-agent smoke test.** `--agents <id1,id2>` on `v2/main.py` runs a subset
+  of the roster instead of all 18, and a new `.github/workflows/smoke_test.yml`
+  gives a one-click (`workflow_dispatch`) single-agent run that uploads its output
+  as an artifact instead of committing — cheap end-to-end validation.
+
+### Fixed (pre-run workflow bugs)
+- **Gemini key mismatch:** code reads `GOOGLE_API_KEY` but the daily workflow only
+  passed `GEMINI_API_KEY`. The adapter now accepts either (alias map), and the
+  workflow passes both. Same alias added for `ANTHROPIC_API_KEY`/`CLAUDE_API_KEY`.
+- **Missing provider keys:** the daily workflow never set `MISTRAL_API_KEY`,
+  `DEEPSEEK_API_KEY`, or `QWEN_API_KEY`, so half the roster couldn't authenticate.
+  Added.
 
 ### Changed
 - **Price universe is now enforced in code** ("Code is Law"): BUY fills outside
