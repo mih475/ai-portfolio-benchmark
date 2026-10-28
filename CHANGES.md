@@ -16,6 +16,13 @@ Running log of substantive changes made on top of the upstream baseline
   re-run for valid risk metrics.)
 
 ### Added
+- **One-click multi-quarter batch** (`.github/workflows/batch_backtest.yml`).
+  A matrix runs 8 independent quarters (2024–2025) as separate jobs (each safe
+  under the 6h cap, `max-parallel: 3`, `fail-fast: false`), then an aggregate job
+  pools every quarter's (agent, SPY) day-pairs and runs the paired bootstrap for
+  a **combined beat-SPY verdict** across the whole sample. Defaults to the cheap
+  aggressive + random roster at tool budget 4. `v2/scripts/combine_backtests.py`
+  does the pooling (reuses the Monte-Carlo machinery); unit-tested.
 - **"Beat SPY?" Monte-Carlo analysis** (`v2/scripts/monte_carlo.py`, wired into
   the backtest workflow → `monte_carlo.md`). A paired bootstrap resamples the
   same days for an agent and SPY together and reports the **probability the

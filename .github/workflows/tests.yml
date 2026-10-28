@@ -43,3 +43,6 @@ jobs:
 
       - name: Run Monte-Carlo analysis test
         run: python3 v2/tests/test_monte_carlo.py
+
+      - name: Run combine-backtests test
+        run: python3 v2/tests/test_combine.py

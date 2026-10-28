@@ -1,0 +1,98 @@
+name: Batch Backtest (multi-quarter)
+
+# One-click multi-quarter batch toward a statistically real "beat SPY?" answer.
+# Runs each quarter as its own independent $10k job (safe under the 6h cap),
+# then an aggregate job pools all quarters' daily (agent, SPY) pairs and runs the
+# paired bootstrap for a combined verdict. Default roster is the cheap
+# aggressive + random control at tool budget 4.
+
+on:
+  workflow_dispatch:
+    inputs:
+      agents:
+        description: "Agents to run each quarter"
+        required: true
+        default: "gemini_aggressive,random_control"
+      max_tool_calls:
+        description: "Per-agent tool-call budget (lower = cheaper)"
+        required: true
+        default: "4"
+
+jobs:
+  quarter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    strategy:
+      max-parallel: 3          # cap concurrency so parallel jobs don't exhaust the API RPM
+      fail-fast: false         # one bad quarter must not cancel the rest
+      matrix:
+        q:
+          - { name: "2024Q1", start: "2024-01-01", end: "2024-03-31" }
+          - { name: "2024Q2", start: "2024-04-01", end: "2024-06-30" }
+          - { name: "2024Q3", start: "2024-07-01", end: "2024-09-30" }
+          - { name: "2024Q4", start: "2024-10-01", end: "2024-12-31" }
+          - { name: "2025Q1", start: "2025-01-01", end: "2025-03-31" }
+          - { name: "2025Q2", start: "2025-04-01", end: "2025-06-30" }
+          - { name: "2025Q3", start: "2025-07-01", end: "2025-09-30" }
+          - { name: "2025Q4", start: "2025-10-01", end: "2025-12-31" }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r v2/requirements.txt
+      - name: Run quarter ${{ matrix.q.name }}
+        env:
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+          FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+          PYTHONPATH: ${{ github.workspace }}
+          MAX_TOOL_CALLS: ${{ inputs.max_tool_calls }}
+          JITTER_MAX: "0"
+        run: |
+          python -m v2.main \
+            --start-date "${{ matrix.q.start }}" \
+            --end-date "${{ matrix.q.end }}" \
+            --agents "${{ inputs.agents }}"
+      - name: Summarize quarter
+        if: always()
+        run: python3 v2/scripts/summarize_backtest.py
+      - name: Upload quarter artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: batch-${{ matrix.q.name }}
+          path: |
+            v2/data/portfolios/*.json
+            v2/data/portfolios/summary.md
+          if-no-files-found: warn
+
+  aggregate:
+    needs: quarter
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Download all quarter artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: batch-*
+          path: quarters
+      - name: Pool quarters into a combined verdict
+        run: |
+          python3 v2/scripts/combine_backtests.py quarters/batch-*/ | tee combined_verdict.md
+      - name: Upload combined verdict
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: batch-combined-verdict
+          path: combined_verdict.md
+          if-no-files-found: warn
