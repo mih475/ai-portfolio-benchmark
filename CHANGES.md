@@ -16,6 +16,17 @@ Running log of substantive changes made on top of the upstream baseline
   re-run for valid risk metrics.)
 
 ### Added
+- **"Beat SPY?" Monte-Carlo analysis** (`v2/scripts/monte_carlo.py`, wired into
+  the backtest workflow → `monte_carlo.md`). A paired bootstrap resamples the
+  same days for an agent and SPY together and reports the **probability the
+  agent beats SPY** and the **margin distribution** (p5/median/p95) — the
+  statistically honest answer to "does it beat the market, and by how much?".
+  Also reports each agent's absolute return distribution (median + 90% band +
+  prob. of loss). Pure stdlib, unit-tested.
+- **Cost/scope knobs on the backtest workflow.** `max_tool_calls` input (env
+  `MAX_TOOL_CALLS`) dials per-agent research depth (lower = cheaper/faster), and
+  inter-agent jitter is now configurable (`JITTER_MAX`, set to 0 in the workflow
+  since it's unneeded on a paid tier). Lets you trade cost for depth per run.
 - **Risk metrics in the leaderboard.** With daily returns fixed, the summary now
   reports annualized volatility and Sharpe (rf=0) alongside return and drawdown.
 - **SPY buy-and-hold benchmark.** After a backtest, `write_benchmark` fetches

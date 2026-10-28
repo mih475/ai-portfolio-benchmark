@@ -20,6 +20,10 @@ on:
         description: "Comma-separated agent ids"
         required: true
         default: "gemini_conservative,gemini_balanced,gemini_aggressive,random_control"
+      max_tool_calls:
+        description: "Per-agent tool-call budget (lower = cheaper/faster, shallower research)"
+        required: true
+        default: "8"
 
 jobs:
   backtest:
@@ -49,6 +53,8 @@ jobs:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
           FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
           PYTHONPATH: ${{ github.workspace }}
+          MAX_TOOL_CALLS: ${{ inputs.max_tool_calls }}
+          JITTER_MAX: "0"   # paid tier: no inter-agent pause needed
         run: |
           python -m v2.main \
             --start-date "${{ inputs.start_date }}" \
@@ -59,6 +65,10 @@ jobs:
         if: always()
         run: python3 v2/scripts/summarize_backtest.py
 
+      - name: Monte-Carlo distribution + beat-SPY analysis
+        if: always()
+        run: python3 v2/scripts/monte_carlo.py
+
       - name: Upload results
         if: always()
         uses: actions/upload-artifact@v4
@@ -67,5 +77,6 @@ jobs:
           path: |
             v2/data/portfolios/*.json
             v2/data/portfolios/summary.md
+            v2/data/portfolios/monte_carlo.md
             v2/data/snapshots/*.json
           if-no-files-found: warn

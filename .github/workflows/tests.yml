@@ -40,3 +40,6 @@ jobs:
 
       - name: Run random control agent test
         run: python3 v2/tests/test_random_agent.py
+
+      - name: Run Monte-Carlo analysis test
+        run: python3 v2/tests/test_monte_carlo.py

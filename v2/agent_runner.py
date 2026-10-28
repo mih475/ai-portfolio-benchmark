@@ -9,11 +9,34 @@ Validates the trades with the PortfolioSimulator and commits them for T+1 execut
 
 import json
 import logging
+import os
 import random
 import time
 from pathlib import Path
 
 from .config import AGENTS, RULES, PERSONA_MODIFIERS, MAX_TOOL_CALLS_PER_AGENT
+
+
+def _tool_budget() -> int:
+    """Per-agent tool-call budget. Env MAX_TOOL_CALLS overrides config, so a run
+    can trade research depth for lower cost without a code change."""
+    try:
+        return max(0, int(os.getenv("MAX_TOOL_CALLS", MAX_TOOL_CALLS_PER_AGENT)))
+    except (TypeError, ValueError):
+        return MAX_TOOL_CALLS_PER_AGENT
+
+
+def _jitter_seconds() -> float:
+    """Seconds to pause between agents. Env JITTER_MAX sets the upper bound
+    (0 disables). Unneeded on a paid tier; defaults to the original 5-15s."""
+    try:
+        hi = float(os.getenv("JITTER_MAX", "15"))
+    except (TypeError, ValueError):
+        hi = 15.0
+    if hi <= 0:
+        return 0.0
+    lo = min(5.0, hi)
+    return random.uniform(lo, hi)
 from .mcp_servers import get_tool_definitions
 from .api_adapters import UnifiedLLMClient
 from .portfolio_simulator import PortfolioSimulator
@@ -171,7 +194,7 @@ def run_agent(agent_id: str, snapshot: dict, simulator: PortfolioSimulator,
         
         client = UnifiedLLMClient(agent.provider)
         try:
-            result_json = client.generate(sys_prompt, user_prompt, tools, max_tool_calls=MAX_TOOL_CALLS_PER_AGENT)
+            result_json = client.generate(sys_prompt, user_prompt, tools, max_tool_calls=_tool_budget())
         except Exception as e:
             logger.error(f"Agent {agent_id} crashed: {e}")
             result_json = ""
@@ -256,11 +279,12 @@ def run_all_agents(snapshot_date: str, agent_ids: list[str] | None = None):
     logger.info(f"Frozen shared price set for {len(shared_ohlc)}/{len(union_tickers)} tickers.")
 
     for i, agent_id in enumerate(agent_ids):
-        # Apply Jitter (except for the first one for speed, or always for safety)
+        # Apply jitter between agents (configurable; unneeded on a paid tier).
         if i > 0:
-            delay = random.uniform(5, 15)
-            logger.info(f"Roster Jitter: Waiting {delay:.1f}s before starting {agent_id}...")
-            time.sleep(delay)
+            delay = _jitter_seconds()
+            if delay > 0:
+                logger.info(f"Roster Jitter: Waiting {delay:.1f}s before starting {agent_id}...")
+                time.sleep(delay)
 
         run_agent(agent_id, snapshot, simulators[agent_id], ohlc_data=shared_ohlc)
 
