@@ -1,9 +1,15 @@
 name: Daily Portfolio Simulation
 
+# NOTE: the daily schedule is DISABLED. This is the upstream "live forward"
+# cron (runs the full roster for one date and commits data back). We drive the
+# study via the Backtest and Smoke Test workflows instead. Re-enable the
+# schedule block below only if you intend a live daily run — and first sort out
+# state persistence (snapshots/portfolios under v2/data are gitignored, so the
+# commit step has nothing to push).
 on:
-  schedule:
-    - cron: '0 21 * * 1-5' # 21:00 UTC, Mon-Fri (Market Close)
-  workflow_dispatch: # Allow manual triggers
+  # schedule:
+  #   - cron: '0 21 * * 1-5' # 21:00 UTC, Mon-Fri (Market Close)
+  workflow_dispatch: # Manual trigger only
 
 jobs:
   simulate:
@@ -26,7 +32,7 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r v2/requirements.txt
 
       - name: Run Market Intelligence Hub & Agent Roster
         env:
