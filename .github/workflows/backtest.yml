@@ -15,7 +15,7 @@ on:
       end_date:
         description: "Backtest end date (YYYY-MM-DD, inclusive)"
         required: true
-        default: "2026-04-30"
+        default: "2026-06-30"
       agents:
         description: "Comma-separated agent ids"
         required: true

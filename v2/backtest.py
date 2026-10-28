@@ -95,9 +95,18 @@ def run_backtest(start_iso: str, end_iso: str, agent_ids=None):
     dates = list(iter_dates(start_iso, end_iso))
     logger.info(f"=== BACKTEST {start_iso}..{end_iso} "
                 f"({len(dates)} calendar days) agents={agent_ids or 'ALL'} ===")
+    failures = 0
     for i, d in enumerate(dates, 1):
         logger.info(f"--- Backtest day {i}/{len(dates)}: {d} ---")
-        run_all_agents(d, agent_ids=agent_ids)
+        try:
+            run_all_agents(d, agent_ids=agent_ids)
+        except Exception as e:
+            # Don't let one bad day (data hiccup, provider outage) abort a long
+            # run — state for completed days is already persisted. Log and go on.
+            failures += 1
+            logger.error(f"Day {d} failed, continuing: {e}")
+    if failures:
+        logger.warning(f"{failures}/{len(dates)} day(s) errored during the backtest.")
 
     # Write a SPY buy-and-hold benchmark row for the same window so the
     # leaderboard answers "beat the market?" not just "beat the random control?".
