@@ -11,8 +11,25 @@ Usage:  python3 v2/scripts/summarize_backtest.py [portfolios_dir]
 """
 
 import json
+import math
 import sys
 from pathlib import Path
+
+TRADING_DAYS = 252  # for annualizing daily stats
+
+
+def _risk_stats(daily: list):
+    """Annualized volatility and Sharpe (rf=0) from a daily-return series.
+    Returns (vol_pct, sharpe). NaN-safe; returns (0, None) for <2 points."""
+    n = len(daily)
+    if n < 2:
+        return 0.0, None
+    mean = sum(daily) / n
+    var = sum((x - mean) ** 2 for x in daily) / (n - 1)
+    std = math.sqrt(var)
+    vol_annual = std * math.sqrt(TRADING_DAYS)
+    sharpe = (mean / std) * math.sqrt(TRADING_DAYS) if std > 0 else None
+    return vol_annual * 100, sharpe
 
 
 def agent_metrics(state: dict) -> dict:
@@ -23,12 +40,16 @@ def agent_metrics(state: dict) -> dict:
                   for p in positions.values())
     value = cash + pos_val
     cum = (value - start) / start if start else 0.0
+    daily = state.get("daily_returns", []) or []
+    vol_pct, sharpe = _risk_stats(daily)
     return {
         "agent": state.get("agent_id", "?"),
         "value": round(value, 2),
         "cum_return_pct": round(cum * 100, 2),
         "max_drawdown_pct": round((state.get("max_drawdown", 0.0) or 0.0) * 100, 2),
-        "days": len(state.get("daily_returns", []) or []),
+        "vol_pct": round(vol_pct, 2),
+        "sharpe": round(sharpe, 2) if sharpe is not None else None,
+        "days": len(daily),
         "positions": len(positions),
     }
 
@@ -61,8 +82,8 @@ def render(rows: list) -> str:
     lines = [
         "# Backtest Leaderboard",
         "",
-        "| Rank | Agent | Final $ | Return % | Max DD % | Days | Open Pos | Note |",
-        "|---|---|---|---|---|---|---|---|",
+        "| Rank | Agent | Final $ | Return % | Max DD % | Ann Vol % | Sharpe | Days | Open Pos | Note |",
+        "|---|---|---|---|---|---|---|---|---|---|",
     ]
     flagged = 0
     for i, r in enumerate(rows, 1):
@@ -70,12 +91,14 @@ def render(rows: list) -> str:
         if _no_activity(r):
             note = "⚠ no activity — check logs (errors/quota?)"
             flagged += 1
+        sharpe = f"{r['sharpe']:+.2f}" if r.get("sharpe") is not None else "—"
         lines.append(
             f"| {i} | {r['agent']} | {r['value']:.2f} | {r['cum_return_pct']:+.2f} "
-            f"| {r['max_drawdown_pct']:.2f} | {r['days']} | {r['positions']} | {note} |"
+            f"| {r['max_drawdown_pct']:.2f} | {r.get('vol_pct', 0):.2f} | {sharpe} "
+            f"| {r['days']} | {r['positions']} | {note} |"
         )
     if not rows:
-        lines.append("| — | _no agent state found_ |  |  |  |  |  |  |")
+        lines.append("| — | _no agent state found_ |  |  |  |  |  |  |  |  |")
     if flagged:
         lines += ["", f"> ⚠ {flagged} agent(s) showed no activity across the run — "
                       f"likely API errors (e.g. rate-limit/quota) or no trades. "

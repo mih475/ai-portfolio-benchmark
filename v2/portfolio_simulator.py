@@ -148,6 +148,11 @@ class PortfolioSimulator:
         self.peak_value: float = starting_capital
         self.max_drawdown: float = 0.0
         self.daily_returns: list[float] = []
+        # Prior day's end-of-day portfolio value, persisted so day-over-day
+        # returns are correct across the per-day simulator rebuilds in a backtest
+        # (otherwise prev_value resets to starting_capital every day and
+        # daily_returns wrongly stores cumulative-since-start).
+        self.last_value: Optional[float] = None
 
         # Load existing state if available
         self._load_state()
@@ -523,9 +528,12 @@ class PortfolioSimulator:
         positions_value = sum(pos.market_value for pos in self.positions.values())
         total_value = self.cash + positions_value
 
-        # Daily return
+        # Daily return — use the prior mark within this process, else the
+        # persisted prior-day value, else starting capital (first day).
         if self.daily_snapshots:
             prev_value = self.daily_snapshots[-1].portfolio_value
+        elif self.last_value is not None:
+            prev_value = self.last_value
         else:
             prev_value = self.starting_capital
 
@@ -540,6 +548,7 @@ class PortfolioSimulator:
             self.max_drawdown = current_drawdown
 
         self.daily_returns.append(daily_return)
+        self.last_value = total_value   # carry into the next day's prev_value
 
         # Build snapshot
         today_txns = [t for t in self.transactions if t.date == today]
@@ -600,6 +609,7 @@ class PortfolioSimulator:
             "starting_capital": self.starting_capital,
             "peak_value": round(self.peak_value, 2),
             "max_drawdown": round(self.max_drawdown, 6),
+            "last_value": round(self.last_value, 2) if self.last_value is not None else None,
             "positions": {t: asdict(p) for t, p in self.positions.items()},
             "pending_orders": [
                 {
@@ -636,6 +646,7 @@ class PortfolioSimulator:
         self.peak_value = state.get("peak_value", self.starting_capital)
         self.max_drawdown = state.get("max_drawdown", 0.0)
         self.daily_returns = state.get("daily_returns", [])
+        self.last_value = state.get("last_value", None)
 
         # Restore positions
         for ticker, pos_data in state.get("positions", {}).items():

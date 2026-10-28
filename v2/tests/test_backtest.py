@@ -71,6 +71,17 @@ def t_agent_metrics_computes_value_and_return():
     assert m["cum_return_pct"] == 5.0, m     # (10500-10000)/10000
     assert m["max_drawdown_pct"] == 8.0, m
     assert m["days"] == 5 and m["positions"] == 2, m
+    # Risk stats present and sane (annualized vol > 0, Sharpe a number).
+    assert m["vol_pct"] > 0, m
+    assert isinstance(m["sharpe"], float), m
+
+
+@test
+def t_risk_stats_degenerate():
+    assert summ._risk_stats([]) == (0.0, None)
+    assert summ._risk_stats([0.01]) == (0.0, None)
+    vol, sh = summ._risk_stats([0.0, 0.0, 0.0])   # zero variance -> no Sharpe
+    assert vol == 0.0 and sh is None
 
 
 @test

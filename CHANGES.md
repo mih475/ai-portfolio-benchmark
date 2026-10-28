@@ -5,7 +5,19 @@ Running log of substantive changes made on top of the upstream baseline
 
 ## Unreleased
 
+### Fixed (daily returns were cumulative, not day-over-day)
+- The simulator is rebuilt each day in a backtest and only restored
+  `daily_returns`, so `prev_value` reset to starting capital every day and
+  `daily_returns` wrongly stored cumulative-since-start — making volatility,
+  Sharpe/Sortino and equity curves meaningless. Now persists `last_value` (prior
+  EOD portfolio value) and uses it as `prev_value`, so day-over-day returns are
+  correct across rebuilds. Endpoint return and max drawdown were already correct
+  and are unchanged. (Runs produced before this fix have bad daily series —
+  re-run for valid risk metrics.)
+
 ### Added
+- **Risk metrics in the leaderboard.** With daily returns fixed, the summary now
+  reports annualized volatility and Sharpe (rf=0) alongside return and drawdown.
 - **SPY buy-and-hold benchmark.** After a backtest, `write_benchmark` fetches
   SPY over the same window and writes a `spy_buy_hold` row (return, max drawdown,
   daily returns) that the leaderboard ranks alongside the agents — so results now

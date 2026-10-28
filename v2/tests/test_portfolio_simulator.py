@@ -193,6 +193,37 @@ def t_mark_to_market_and_drawdown():
 
 
 @test
+def t_daily_returns_are_day_over_day_across_rebuilds():
+    # Simulate the backtest pattern: a fresh simulator each day, loading the
+    # prior day's persisted state. daily_returns must be day-over-day, not
+    # cumulative-since-start.
+    import tempfile
+    from pathlib import Path
+    d = Path(tempfile.mkdtemp())
+    rules = make_rules()
+
+    # Day 1: hold 100 sh ABC @ $100 + $0 cash => value 10000 (flat vs start).
+    s1 = PortfolioSimulator("agent", 10000.0, rules, d)
+    s1.cash = 0.0
+    s1.positions["ABC"] = Position("ABC", 100, 100.0, "2026-07-01", 90.0, current_price=100.0)
+    s1.mark_to_market({"ABC": 100.0}, "2026-07-01")   # value 10000, day_ret 0
+    s1.save_state()
+
+    # Day 2: ABC -> $110 => value 11000. Day-over-day = +10%.
+    s2 = PortfolioSimulator("agent", 10000.0, rules, d)   # reloads prior state
+    s2.mark_to_market({"ABC": 110.0}, "2026-07-02")
+    s2.save_state()
+    assert approx(s2.daily_returns[-1], 0.10, tol=1e-6), s2.daily_returns
+
+    # Day 3: ABC -> $110 (unchanged) => value 11000. Day-over-day = 0%.
+    s3 = PortfolioSimulator("agent", 10000.0, rules, d)
+    s3.mark_to_market({"ABC": 110.0}, "2026-07-03")
+    assert approx(s3.daily_returns[-1], 0.0, tol=1e-6), s3.daily_returns
+    # (Under the old bug day 3 would have been +10% again — cumulative vs $10k.)
+    # (Under the old bug this would have been +10% again — cumulative vs $10k.)
+
+
+@test
 def t_state_roundtrip():
     sim = new_sim()
     sim.submit_orders([{"action": "BUY", "ticker": "ABC", "allocation_pct": 10,
