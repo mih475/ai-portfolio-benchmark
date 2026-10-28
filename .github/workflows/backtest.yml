@@ -24,6 +24,9 @@ on:
 jobs:
   backtest:
     runs-on: ubuntu-latest
+    # Backstop under GitHub's hard 6h job cap. A single quarter runs well under
+    # this; run separate quarters as separate dispatches rather than one long range.
+    timeout-minutes: 330
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
