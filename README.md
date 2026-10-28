@@ -7,6 +7,10 @@
 > for what this fork changes. Some claims below are inherited from upstream and
 > are being corrected — treat the README as aspirational until `CHANGES.md` says a
 > feature is verified.
+>
+> **📊 Results & methodology: see [`FINDINGS.md`](FINDINGS.md).** Headline: over
+> 8 quarters (2024–2025), the aggressive Gemini agent returned +1.6% vs SPY's
+> +48.6% and beat SPY in only 27% of bootstrapped paths — no risk-adjusted edge.
 
 A high-fidelity project for benchmarking the financial decision-making of **18 autonomous AI agents** (6 models × 3 personas) in a deterministic, rules-based trading simulation.
 
