@@ -21,9 +21,13 @@ import monte_carlo as mc  # noqa: E402
 
 
 def _load_dir(d):
-    """Return {agent_id: daily_returns} for one quarter's portfolios dir."""
+    """Return {agent_id: daily_returns} for one quarter's artifact dir.
+
+    Uses rglob so it finds the JSONs regardless of how the CI artifact
+    download nests them (e.g. directly in batch-X/ or under batch-X/v2/data/...).
+    """
     out = {}
-    for f in sorted(Path(d).glob("*.json")):
+    for f in sorted(Path(d).rglob("*.json")):
         if f.name.endswith("_history.json") or f.name in ("summary.json",):
             continue
         try:
