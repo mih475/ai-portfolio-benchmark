@@ -6,6 +6,12 @@ Running log of substantive changes made on top of the upstream baseline
 ## Unreleased
 
 ### Added
+- **SPY buy-and-hold benchmark.** After a backtest, `write_benchmark` fetches
+  SPY over the same window and writes a `spy_buy_hold` row (return, max drawdown,
+  daily returns) that the leaderboard ranks alongside the agents — so results now
+  answer "beat the market?" not just "beat the random control?". The metric math
+  (`buy_hold_metrics`) is pure/stdlib and unit-tested; the fetch is best-effort
+  (skips silently if unavailable).
 - **Multi-day backtest.** `v2/backtest.py` iterates a date range in order within
   one process so portfolio state carries day to day; `--start-date/--end-date`
   on `v2/main.py` drive it. `v2/scripts/summarize_backtest.py` prints a

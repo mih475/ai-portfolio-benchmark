@@ -88,6 +88,40 @@ def t_summarize_sorts_and_skips_history():
 
 
 @test
+def t_buy_hold_metrics():
+    # Up 10% then down to +5% overall, with a dip in the middle.
+    closes = [100.0, 110.0, 99.0, 105.0]
+    m = bt.buy_hold_metrics(closes, capital=10000.0)
+    assert round(m["final"], 2) == 10500.0, m          # 105/100 * 10000
+    assert round(m["cum"] * 100, 2) == 5.0, m
+    # peak 11000 -> trough 9900 => max drawdown 10%
+    assert round(m["mdd"] * 100, 2) == 10.0, m
+    assert len(m["daily_returns"]) == 3
+
+
+@test
+def t_buy_hold_handles_degenerate():
+    assert bt.buy_hold_metrics([], 10000)["cum"] == 0.0
+    assert bt.buy_hold_metrics([100.0], 10000)["final"] == 10000
+
+
+@test
+def t_benchmark_row_renders_in_summary():
+    # A written benchmark state is picked up and ranked like any agent.
+    d = Path(tempfile.mkdtemp())
+    (d / "spy_buy_hold.json").write_text(json.dumps({
+        "agent_id": "spy_buy_hold", "starting_capital": 10000, "cash": 10400,
+        "positions": {}, "max_drawdown": 0.03, "daily_returns": [0.01, -0.005, 0.02]}))
+    (d / "agent.json").write_text(json.dumps({
+        "agent_id": "gemini_balanced", "starting_capital": 10000, "cash": 10200,
+        "positions": {}, "max_drawdown": 0.015, "daily_returns": [0.01, 0.01]}))
+    rows = summ.summarize(str(d))
+    assert rows[0]["agent"] == "spy_buy_hold", rows   # higher return ranks first
+    md = summ.render(rows)
+    assert "spy_buy_hold" in md
+
+
+@test
 def t_no_activity_flagged():
     # An agent that ran days but never moved / held nothing is flagged.
     flat = {"agent": "stuck", "value": 10000.0, "cum_return_pct": 0.0,
