@@ -46,3 +46,6 @@ jobs:
 
       - name: Run combine-backtests test
         run: python3 v2/tests/test_combine.py
+
+      - name: Run API parameter-shim test
+        run: python3 v2/tests/test_safe_create.py

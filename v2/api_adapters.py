@@ -27,6 +27,43 @@ def _proto_to_plain(obj):
         return [_proto_to_plain(v) for v in obj]
     return obj
 
+
+def _safe_create(fn, **kwargs):
+    """Call an SDK create()/complete() method, tolerating provider parameter drift.
+
+    Newer model APIs rename or drop parameters (e.g. OpenAI's GPT-6 requires
+    `max_completion_tokens` instead of `max_tokens`; some SDKs' `messages.create`
+    no longer accept `temperature` as a kwarg). On an SDK TypeError for an
+    unexpected keyword, or an API 400 for an unsupported parameter, we rename
+    (max_tokens -> max_completion_tokens) or drop the offending argument and
+    retry, so one provider's quirk can't zero out a whole run. Transient errors
+    (429/503) don't match these patterns and propagate to the backoff wrapper.
+    """
+    import re
+    for _ in range(6):  # at most a handful of parameter adjustments
+        try:
+            return fn(**kwargs)
+        except TypeError as e:
+            m = re.search(r"unexpected keyword argument '(\w+)'", str(e))
+            if m and m.group(1) in kwargs:
+                kwargs.pop(m.group(1))
+                continue
+            raise
+        except Exception as e:
+            msg = str(e)
+            m = re.search(r"Unsupported parameter: '(\w+)'", msg) or \
+                re.search(r"'(\w+)' is not supported", msg) or \
+                re.search(r"Unknown parameter: '(\w+)'", msg)
+            if m and m.group(1) in kwargs:
+                bad = m.group(1)
+                if bad == "max_tokens" and "max_completion_tokens" not in kwargs:
+                    kwargs["max_completion_tokens"] = kwargs.pop("max_tokens")
+                else:
+                    kwargs.pop(bad)
+                continue
+            raise
+    return fn(**kwargs)
+
 def retry_with_backoff(func: Callable, max_retries: int = 5, base_delay: float = 2.0):
     """Generic 2026-style exponential backoff wrapper."""
     def wrapper(*args, **kwargs):
@@ -124,7 +161,8 @@ class UnifiedLLMClient:
         if not formatted_tools or max_calls == 0:
             @retry_with_backoff
             def _call_oai():
-                return client.chat.completions.create(
+                return _safe_create(
+                    client.chat.completions.create,
                     model=self.provider.model_id,
                     messages=messages,
                     temperature=self.provider.temperature,
@@ -137,7 +175,8 @@ class UnifiedLLMClient:
         while call_count < max_calls:
             @retry_with_backoff
             def _call_oai_tool():
-                return client.chat.completions.create(
+                return _safe_create(
+                    client.chat.completions.create,
                     model=self.provider.model_id,
                     messages=messages,
                     tools=formatted_tools,
@@ -202,7 +241,8 @@ class UnifiedLLMClient:
         if not tools or max_calls == 0:
             @retry_with_backoff
             def _call_anthropic():
-                return client.messages.create(
+                return _safe_create(
+                    client.messages.create,
                     model=self.provider.model_id,
                     system=system_prompt,
                     messages=messages,
@@ -217,7 +257,8 @@ class UnifiedLLMClient:
         while call_count < max_calls:
             @retry_with_backoff
             def _call_anthropic_tool():
-                return client.messages.create(
+                return _safe_create(
+                    client.messages.create,
                     model=self.provider.model_id,
                     system=system_prompt,
                     messages=messages,
