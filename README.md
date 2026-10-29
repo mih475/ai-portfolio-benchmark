@@ -33,7 +33,7 @@ To maximize context window efficiency, MIH data is serialized into **Markdown Ta
 
 ### 3. The Agent Roster (18 LLM agents + 1 random control = 19)
  benchmarked across:
-- **Providers (6)**, as configured in `v2/config.py`: OpenAI (`gpt-4o`), Google (`gemini-3.8-flash`), Anthropic (`claude-sonnet-4-6`), Mistral (`mistral-large-latest`), DeepSeek (`deepseek-chat`), and Qwen (`qwen-max`). Model ids drift as providers retire versions — if an agent 404s, update its `model_id` here.
+- **Providers (6)**, as configured in `v2/config.py`: OpenAI (`gpt-6-luna`), Google (`gemini-3.8-flash`), Anthropic (`claude-haiku-5-5`), Mistral (`mistral-large-latest`), DeepSeek (`deepseek-chat`), and Qwen (`qwen-max`). Model ids drift as providers retire versions — if an agent 404s, update its `model_id` here or set `MODEL_ID_<PROVIDER>` at run time.
 - **Risk Profiles (3)**: Conservative, Balanced, and Aggressive (Persona-driven logic).
 - **Control**: one `random_control` agent that trades randomly, as a skill-vs-luck baseline.
 - **Automation**: Fully autonomous daily execution via **GitHub Actions** at 21:00 UTC (Market Close), with automated state persistence via `git-auto-commit`.

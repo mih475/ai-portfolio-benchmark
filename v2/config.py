@@ -93,7 +93,7 @@ class LLMProvider:
 PROVIDERS = {
     "chatgpt": LLMProvider(
         name="ChatGPT",
-        model_id="gpt-4o",
+        model_id="gpt-6-luna",   # small/fast tier (OpenAI's lowest-cost chat model, 2026-10)
         api_type="openai",
         api_key_env="OPENAI_API_KEY",
     ),
@@ -105,7 +105,7 @@ PROVIDERS = {
     ),
     "claude": LLMProvider(
         name="Claude",
-        model_id="claude-sonnet-4-6",
+        model_id="claude-haiku-5-5",   # small/fast tier (current Haiku, 2026-10)
         api_type="anthropic",
         api_key_env="ANTHROPIC_API_KEY",
     ),
