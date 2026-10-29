@@ -9,8 +9,10 @@
 > feature is verified.
 >
 > **📊 Results & methodology: see [`FINDINGS.md`](FINDINGS.md).** Headline: over
-> 8 quarters (2024–2025), the aggressive Gemini agent returned +1.6% vs SPY's
-> +48.6% and beat SPY in only 27% of bootstrapped paths — no risk-adjusted edge.
+> 8 quarters (2024–2025), no Gemini persona beat SPY buy-and-hold (+48.6% / 2yr).
+> Best was balanced (+37.8%, 40% beat-rate); aggressive (+1.6%) and conservative
+> (+3.2%) failed badly; a random control matched or beat all three. No
+> risk-adjusted edge.
 
 A high-fidelity project for benchmarking the financial decision-making of **18 autonomous AI agents** (6 models × 3 personas) in a deterministic, rules-based trading simulation.
 

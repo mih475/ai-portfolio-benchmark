@@ -13,11 +13,14 @@ Can an autonomous LLM trading agent **beat a passive S&P 500 buy-and-hold
 run rigorously (no look-ahead, enforced rules, a real benchmark, and enough
 data to separate skill from luck)?
 
-**Short answer: no.** Over eight quarters (2024–2025, 502 trading days) the
-aggressive Gemini agent returned **+1.6%** while SPY returned **+48.6%**, beat
-SPY in only **27%** of bootstrapped forward paths, and had a **~49% chance of
-losing money**. Its returns came from taking ~3× the market's volatility, not
-from skill — a dart-throwing random control matched or beat it.
+**Short answer: no.** Over eight quarters (2024–2025) **none of the three Gemini
+personas beat SPY buy-and-hold** (+48.6% over the two years). The *balanced*
+persona came closest — +37.8%, beating SPY in 5 of 8 quarters with near-SPY
+volatility — but still trailed and wins only 40% of bootstrapped paths.
+*Aggressive* (+1.6%) and *conservative* (+3.2%) failed badly for opposite
+reasons: aggressive took ~3× the market's volatility for no payoff, conservative
+was too timid to keep up. A dart-throwing **random control matched or beat all
+of them** — direct evidence the agents show no persistent skill.
 
 ---
 
@@ -90,41 +93,50 @@ single path.
 
 ## 3. Results
 
-### 3.1 Primary study — 8 quarters, 2024–2025 (aggressive vs SPY vs random)
+### 3.1 Primary study — 8 quarters, 2024–2025, all three personas + controls
 
-Per-quarter total return:
+Per-quarter total return (SPY buy-and-hold in the last column):
 
-| Quarter | gemini_aggressive | random_control | spy_buy_hold | Agg beat SPY? |
-|---|---|---|---|---|
-| 2024 Q1 | +18.76% | +7.89% | +11.01% | ✅ |
-| 2024 Q2 | −16.79% | −3.73% | +4.56% | ❌ |
-| 2024 Q3 | +13.65% | +6.65% | +5.53% | ✅ |
-| 2024 Q4 | +19.08% | +22.86% | +3.42% | ✅ |
-| 2025 Q1 | −23.77% | −11.62% | −4.03% | ❌ |
-| 2025 Q2 | +8.56% | +36.44% | +10.47% | ❌ |
-| 2025 Q3 | −10.38% | +16.45% | +8.16% | ❌ |
-| 2025 Q4 | +2.42% | −12.54% | +2.32% | ✅ |
+| Quarter | conservative | balanced | aggressive | random | SPY |
+|---|---|---|---|---|---|
+| 2024 Q1 | +2.73% | +11.39% | +18.76% | +7.89% | +11.01% |
+| 2024 Q2 | −3.83% | +4.93% | −16.79% | −3.73% | +4.56% |
+| 2024 Q3 | +8.92% | +8.31% | +13.65% | +6.65% | +5.53% |
+| 2024 Q4 | −2.42% | +5.77% | +19.08% | +22.86% | +3.42% |
+| 2025 Q1 | −0.67% | −1.93% | −23.77% | −11.62% | −4.03% |
+| 2025 Q2 | −0.87% | +7.84% | +8.56% | +36.44% | +10.47% |
+| 2025 Q3 | +1.28% | −1.63% | −10.38% | +16.45% | +8.16% |
+| 2025 Q4 | −1.43% | −1.06% | +2.42% | −12.54% | +2.32% |
 
-Two-year compounded ($10,000 start):
+Two-year compounded ($10,000 start), ranked:
 
 | Agent | 2-yr total | Ending value | Qtrs beating SPY | Quarterly vol |
 |---|---|---|---|---|
 | random_control | +67.1% | $16,714 | 4/8 | 16.0% |
 | **spy_buy_hold** | **+48.6%** | **$14,863** | — | **4.6%** |
+| gemini_balanced | +37.8% | $13,782 | 5/8 | 4.8% |
+| gemini_conservative | +3.2% | $10,322 | 2/8 | 3.7% |
 | gemini_aggressive | +1.6% | $10,159 | 4/8 | 15.5% |
 
-Pooled paired bootstrap (502 days / 494 agent–SPY pairs, 1-year horizon):
+Pooled paired bootstrap vs SPY (≈500 agent–SPY day-pairs per agent, 1-year
+horizon). "Prob. beat SPY" near 50% = coin-flip / no edge:
 
 | Agent | Prob. beat SPY | Median margin vs SPY | 90% band | Median 1-yr return | Prob. of loss |
 |---|---|---|---|---|---|
 | random_control | 59% | +5.7% | −27.8% … +63.3% | +29.6% | 20% |
 | spy_buy_hold | — | — | — | +21.8% | 10% |
-| **gemini_aggressive** | **27%** | **−17.6%** | −50.9% … +38.0% | +0.8% | **49%** |
+| gemini_balanced | 40% | −4.0% | −26.1% … +24.9% | +17.5% | 16% |
+| gemini_aggressive | 27% | −17.6% | −50.9% … +38.0% | +0.8% | 49% |
+| gemini_conservative | 12% | −17.0% | −36.3% … +7.1% | +1.4% | 44% |
 
-### 3.2 Supporting observation — full persona roster (2026 Q2, fully instrumented)
+(Aggressive + random and conservative + balanced were run as two separate
+batches; SPY buy-and-hold is deterministic over identical dates, so it anchors
+both consistently.)
 
-A separate quarter run with all three personas shows the pattern isn't specific
-to "aggressive":
+### 3.2 Independent corroboration — 2026 Q2 (different year, full roster in one run)
+
+A separate single-quarter run in 2026, all personas together, shows the same
+ordering out-of-sample:
 
 | Agent | Return | Max DD | Ann Vol | Sharpe |
 |---|---|---|---|---|
@@ -134,35 +146,38 @@ to "aggressive":
 | gemini_balanced | +4.77% | 7.28% | 16.7% | +1.22 |
 | gemini_conservative | −3.09% | 3.83% | 9.2% | −1.34 |
 
-No persona beat SPY on return or Sharpe; conservative *lost money in a +14%
-quarter* by being too timid.
+No persona beat SPY on return or Sharpe.
 
 ---
 
 ## 4. Findings
 
-1. **The LLM agent did not beat the market.** Aggressive trailed SPY by ~47
-   points over two years and wins only 27% of bootstrapped paths — i.e. SPY
-   beats it ~3 times out of 4, by a median of ~18%/year.
-2. **Its returns were volatility, not skill.** It ran ~3× SPY's volatility and
-   its occasional big quarters were erased by catastrophic ones (−17%, −24%,
-   −10%). High variance destroys compounding: +1.6% over two years despite
-   several strong quarters.
-3. **Personas produce coherent *risk* differences but not *return* advantages.**
-   Conservative = low vol/low (even negative) return; aggressive = high vol; none
-   = alpha.
-4. **The random control is the cautionary tale.** It "won" some windows (and the
-   2024–25 total) purely by variance, beating the "intelligent" agent — direct
-   evidence that observed agent performance is not skill. Its results swing
-   wildly by window (it lost 14% in one 2026 quarter, gained 36% in another).
+1. **No persona beat the market.** All three trailed SPY's +48.6% over two
+   years, and none wins more than ~40% of bootstrapped paths vs SPY.
+2. **Balanced is the only respectable one — and it still lost.** It returned
+   +37.8% at near-SPY volatility (4.8% vs 4.6%) and beat SPY in 5 of 8 quarters,
+   but a −4% median margin and a 40% beat-rate mean it behaves like a slightly
+   *worse* index fund, not a market-beater.
+3. **Aggressive and conservative fail for opposite reasons.** Aggressive ran ~3×
+   SPY's volatility, and its big quarters were erased by catastrophic ones
+   (−17%, −24%, −10%) → +1.6% over two years with a 49% chance of loss.
+   Conservative was so timid (3.7% vol) it couldn't keep up → +3.2%, and *lost
+   money in up quarters*. Persona prompts move *risk* coherently but produce no
+   *return* advantage.
+4. **The random control is the cautionary tale.** It "won" the 2024–25 total and
+   beats SPY 59% of the time in the bootstrap — purely by taking variance, with
+   no skill and a 20% loss probability. A dart-thrower matching or beating the
+   "intelligent" agents is the clearest possible evidence of no alpha.
 5. **Single quarters lie.** Aggressive beat SPY in 4 of 8 quarters and looked
    excellent in isolation (e.g. 2024 Q1: +19% and a 98% single-quarter
    beat-probability). Only pooling across quarters reveals it has no edge. Any
    claim from 1–2 quarters would have been noise.
 
-**Bottom line:** within a rigorous benchmark, this LLM agent showed **no
-risk-adjusted skill versus passive indexing**, and took substantially more risk
-to end up flat. This is a clean negative result.
+**Bottom line:** within a rigorous benchmark, no Gemini persona showed
+**risk-adjusted skill versus passive indexing**. The best (balanced) merely
+approximated a slightly-worse index fund; the others destroyed value by taking
+too much or too little risk; and a random control was indistinguishable from —
+or better than — the agents. This is a clean negative result.
 
 ---
 
