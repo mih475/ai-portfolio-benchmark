@@ -132,6 +132,14 @@ PROVIDERS = {
     ),
 }
 
+# Per-provider model-id override via env (e.g. MODEL_ID_CHATGPT=gpt-5.5-mini),
+# so a retired default can be fixed at run time without a code change — the
+# same failure that silently zeroed Gemini when gemini-2.5-flash was retired.
+for _key, _prov in PROVIDERS.items():
+    _override = os.getenv(f"MODEL_ID_{_key.upper()}")
+    if _override:
+        _prov.model_id = _override
+
 # ─────────────────────────────────────────────
 # Agent Definitions
 # ─────────────────────────────────────────────
