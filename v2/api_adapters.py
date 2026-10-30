@@ -167,6 +167,7 @@ class UnifiedLLMClient:
                     messages=messages,
                     temperature=self.provider.temperature,
                     max_tokens=self.provider.max_tokens,
+                    reasoning_effort="none",  # reasoning models need this for chat+tools; shim drops it elsewhere
                 )
             response = _call_oai()
             return response.choices[0].message.content or ""
@@ -182,17 +183,17 @@ class UnifiedLLMClient:
                     tools=formatted_tools,
                     temperature=self.provider.temperature,
                     max_tokens=self.provider.max_tokens,
-                    parallel_tool_calls=self.provider.parallel_tool_calls
+                    parallel_tool_calls=self.provider.parallel_tool_calls,
+                    reasoning_effort="none",  # reasoning models need this for chat+tools; shim drops it elsewhere
                 )
             response = _call_oai_tool()
-            
+
             message = response.choices[0].message
             messages.append(message)
-            
+
             if not message.tool_calls:
-                # Agent didn't call a tool. It either failed to use propose_trades or it just answered.
-                # If we are here, it means we don't have a strict forced tool, so we return the content.
-                return message.content or ""
+                # Agent answered without a tool call — force a final propose_trades.
+                return self._force_openai_propose(client, messages, tools)
                 
             tool_call = message.tool_calls[0] # parallel_tool_calls is False
             func_name = tool_call.function.name
@@ -219,7 +220,35 @@ class UnifiedLLMClient:
             })
             
         logger.warning(f"{self.provider.name} hit max tool calls ({max_calls})")
-        return ""
+        return self._force_openai_propose(client, messages, tools)
+
+    def _force_openai_propose(self, client, messages, tools: List[Dict]) -> str:
+        """Final call with propose_trades forced, so budget exhaustion still yields a decision."""
+        try:
+            propose_only = [t for t in tools if t.get("name") == "propose_trades"]
+            if not propose_only:
+                return ""
+            formatted = self._convert_tools_to_openai(propose_only)
+            msgs = messages + [{"role": "user", "content":
+                "You have used your analysis budget. Call propose_trades now with your final "
+                "decisions. If you do not want to trade, call it with an empty trades list."}]
+            resp = _safe_create(
+                client.chat.completions.create,
+                model=self.provider.model_id,
+                messages=msgs,
+                tools=formatted,
+                tool_choice={"type": "function", "function": {"name": "propose_trades"}},
+                temperature=self.provider.temperature,
+                max_tokens=self.provider.max_tokens,
+                reasoning_effort="none",
+            )
+            tc = resp.choices[0].message.tool_calls
+            if tc:
+                return tc[0].function.arguments
+            return ""
+        except Exception as e:
+            logger.warning(f"{self.provider.name} forced propose failed: {e}")
+            return ""
 
     def _run_anthropic_loop(self, system_prompt: str, user_prompt: str, tools: List[Dict], max_calls: int) -> str:
         import anthropic
@@ -274,9 +303,10 @@ class UnifiedLLMClient:
             
             # Append assistant's turn (must include the tool_use blocks)
             messages.append({"role": "assistant", "content": response.content})
-            
+
             if not tool_calls:
-                return "\n".join(text_blocks)
+                # Answered without a tool call — force a final propose_trades.
+                return self._force_anthropic_propose(client, system_prompt, messages, anthropic_tools)
                 
             # Anthropic requires a 'user' message with 'tool_result' for EVERY 'tool_use' in the turn
             results_content = []
@@ -301,8 +331,35 @@ class UnifiedLLMClient:
                 
             # Submit all results in the next turn
             messages.append({"role": "user", "content": results_content})
-            
-        return ""
+
+        return self._force_anthropic_propose(client, system_prompt, messages, anthropic_tools)
+
+    def _force_anthropic_propose(self, client, system_prompt, messages, anthropic_tools) -> str:
+        """Final call with propose_trades forced, so budget exhaustion still yields a decision."""
+        try:
+            propose = next((t for t in anthropic_tools if t["name"] == "propose_trades"), None)
+            if not propose:
+                return ""
+            msgs = messages + [{"role": "user", "content":
+                "You have used your analysis budget. Call propose_trades now with your final "
+                "decisions. If you do not want to trade, call it with an empty trades list."}]
+            resp = _safe_create(
+                client.messages.create,
+                model=self.provider.model_id,
+                system=system_prompt,
+                messages=msgs,
+                tools=[propose],
+                tool_choice={"type": "tool", "name": "propose_trades"},
+                max_tokens=self.provider.max_tokens,
+                temperature=self.provider.temperature,
+            )
+            for b in resp.content:
+                if getattr(b, "type", None) == "tool_use" and b.name == "propose_trades":
+                    return json.dumps(_proto_to_plain(b.input))
+            return ""
+        except Exception as e:
+            logger.warning(f"{self.provider.name} forced propose failed: {e}")
+            return ""
 
     def _run_google_loop(self, system_prompt: str, user_prompt: str, tools: List[Dict], max_calls: int) -> str:
         from google import genai
