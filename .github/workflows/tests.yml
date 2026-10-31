@@ -49,3 +49,6 @@ jobs:
 
       - name: Run API parameter-shim test
         run: python3 v2/tests/test_safe_create.py
+
+      - name: Run Anthropic thinking-block fix test
+        run: python3 v2/tests/test_anthropic_thinking.py

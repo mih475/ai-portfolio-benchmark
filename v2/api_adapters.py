@@ -334,32 +334,82 @@ class UnifiedLLMClient:
 
         return self._force_anthropic_propose(client, system_prompt, messages, anthropic_tools)
 
+    @staticmethod
+    def _strip_thinking(messages):
+        """Return a copy of the message list with thinking / redacted_thinking
+        blocks removed from assistant turns.
+
+        Reasoning models (e.g. claude-haiku-5-5) return signed `thinking` blocks.
+        Each block's signature is bound to the exact `tools` list it was created
+        with, so replaying it under a *different* tools list — or any context the
+        API treats as a different conversation — raises a 400:
+            Invalid `signature` in `thinking` block ... The `tools` list differs
+            from the one this block was created with.
+        Dropping the blocks entirely sidesteps the binding check; the visible
+        text and tool_use/tool_result blocks (which carry the actual decisions)
+        are preserved, so nothing the simulator needs is lost."""
+        cleaned = []
+        for m in messages:
+            content = m.get("content")
+            if m.get("role") == "assistant" and isinstance(content, list):
+                kept = [b for b in content
+                        if getattr(b, "type", None) not in ("thinking", "redacted_thinking")]
+                m = {**m, "content": kept}
+            cleaned.append(m)
+        return cleaned
+
     def _force_anthropic_propose(self, client, system_prompt, messages, anthropic_tools) -> str:
-        """Final call with propose_trades forced, so budget exhaustion still yields a decision."""
-        try:
-            propose = next((t for t in anthropic_tools if t["name"] == "propose_trades"), None)
-            if not propose:
-                return ""
-            msgs = messages + [{"role": "user", "content":
-                "You have used your analysis budget. Call propose_trades now with your final "
-                "decisions. If you do not want to trade, call it with an empty trades list."}]
-            resp = _safe_create(
-                client.messages.create,
-                model=self.provider.model_id,
-                system=system_prompt,
-                messages=msgs,
-                tools=[propose],
-                tool_choice={"type": "tool", "name": "propose_trades"},
-                max_tokens=self.provider.max_tokens,
-                temperature=self.provider.temperature,
-            )
+        """Final call that coaxes a decision out of the model after the tool
+        budget is spent, so budget exhaustion still yields a (possibly empty)
+        trade list instead of a silent flat $10,000.
+
+        Robust to reasoning-model thinking blocks: we keep the FULL tools list
+        (so any signed thinking block still validates) and try, in order,
+        (1) forcing propose_trades, (2) letting the model choose with a strong
+        nudge, and (3) the same nudge after stripping thinking blocks. Any one
+        that returns a propose_trades call wins."""
+        propose = next((t for t in anthropic_tools if t["name"] == "propose_trades"), None)
+        if not propose:
+            return ""
+        nudge = {"role": "user", "content":
+                 "You have used your analysis budget. Call propose_trades now with your final "
+                 "decisions. If you do not want to trade, call it with an empty trades list."}
+
+        def _extract(resp):
             for b in resp.content:
                 if getattr(b, "type", None) == "tool_use" and b.name == "propose_trades":
                     return json.dumps(_proto_to_plain(b.input))
-            return ""
-        except Exception as e:
-            logger.warning(f"{self.provider.name} forced propose failed: {e}")
-            return ""
+            return None
+
+        # (base_messages, tool_choice) attempts, cheapest-first. The full tools
+        # list is passed every time so thinking-block signatures stay valid.
+        attempts = [
+            (messages, {"type": "tool", "name": "propose_trades"}),
+            (messages, {"type": "auto"}),
+            (self._strip_thinking(messages), {"type": "auto"}),
+        ]
+        last_err = None
+        for base_msgs, choice in attempts:
+            try:
+                resp = _safe_create(
+                    client.messages.create,
+                    model=self.provider.model_id,
+                    system=system_prompt,
+                    messages=base_msgs + [nudge],
+                    tools=anthropic_tools,
+                    tool_choice=choice,
+                    max_tokens=self.provider.max_tokens,
+                    temperature=self.provider.temperature,
+                )
+                out = _extract(resp)
+                if out is not None:
+                    return out
+            except Exception as e:
+                last_err = e
+                continue
+        if last_err is not None:
+            logger.warning(f"{self.provider.name} forced propose failed: {last_err}")
+        return ""
 
     def _run_google_loop(self, system_prompt: str, user_prompt: str, tools: List[Dict], max_calls: int) -> str:
         from google import genai
