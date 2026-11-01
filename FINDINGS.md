@@ -13,29 +13,36 @@ Can an autonomous LLM trading agent **beat a passive S&P 500 buy-and-hold
 run rigorously (no look-ahead, enforced rules, a real benchmark, and enough
 data to separate skill from luck)?
 
-**Short answer: mostly no — with one striking exception.** Across three model
-families (Google Gemini, OpenAI, Anthropic) and nine LLM agents run over the same
-eight quarters (2024–2025), **eight of nine failed to beat SPY buy-and-hold**
-(+48.6% / +21.8% median 1-yr). The exception is **Anthropic Claude Haiku 5.5 on
-the *aggressive* persona**: it beat SPY in **5 of 8 quarters**, compounded to
-**+84%** over the two years versus SPY's **+49%**, and wins **71% of bootstrapped
-paths** with a **+11.2% median margin** — the only agent in the entire study to
-clear a coin-flip. Crucially, it did so with *strong risk-adjusted* numbers
-(quarterly Sharpe +3.3 to +4.7 in its best quarters, and in 2025 Q2 it beat SPY
-on **lower** volatility), so this is not merely variance-harvesting.
+**Short answer: mostly no — with one modest, bull-market-only exception.** Across
+three model families (Google Gemini, OpenAI, Anthropic) and nine LLM agents run
+over the same eight quarters (2024–2025), **eight of nine failed to beat SPY
+buy-and-hold** (+48.6% / ≈+22% median 1-yr). The only agent that beats it is
+**Anthropic Claude Haiku 5.5 on the *aggressive* persona** — but the edge is
+**small and noisy**, not the headline it first looked like.
 
-Every other agent trailed: Claude's own *balanced* persona (13% beat-rate), both
-OpenAI personas (`gpt-6-luna` balanced 25% / aggressive 13%), and all three
-Gemini personas (≤40%). A dart-throwing **random control** beat the *rest* of the
-field on 2-year total (+67.1%) and sits at 59% in the bootstrap — but purely by
-taking variance, with only a +5.7% margin — underscoring that most of the
-"intelligence" added no risk-adjusted edge.
+Run once, Claude-aggressive looked spectacular: +84% over two years, 71%
+bootstrap beat-rate, +11.2% median margin. But repeating the *identical* run
+three times (to separate signal from LLM run-to-run noise) showed the edge
+decaying each time — **71% → 61% → 45%** beat-rate; **+84% → +62% → +44%**
+compounded — with the third run landing *below* SPY. **Pooled across all three
+runs (1,482 day-pairs), the honest estimate is a 60% beat-rate and a +4.4% median
+margin**: a real but modest tilt, with a −21% downside tail and a ~40% chance of
+simply trailing SPY in any given year. The original 71% was the lucky draw, not
+the truth.
 
-The Claude-aggressive result is the first genuine market-beating signal in this
-benchmark, and unlike the random control it is risk-adjusted. **But** it leans on
-two strong quarters (2025 Q2–Q3) and has **not yet been tested against a
-same-quarter random control**, so per this project's own "single quarters lie"
-discipline it is a signal to **confirm**, not a settled claim. See §3.3.
+Every other agent trailed outright: Claude's own *balanced* persona (13%
+beat-rate), both OpenAI personas (`gpt-6-luna` balanced 25% / aggressive 13%),
+and all three Gemini personas (≤40%). A dart-throwing **random control** is pure
+noise — 59% beat-rate in one draw, 11–18% in two others, averaging well below SPY
+— confirming the baseline has no persistent edge (and that Claude's staying
+*above* a coin-flip across three draws is itself the signal).
+
+Two caveats keep even the modest Claude edge from being a usable result: it is
+**entirely a bull-market** finding (2024–25 SPY +49%), and an aggressive long-only
+agent amplifying an uptrend can look good purely through beta. Whether the tilt
+survives a **bear regime (2022)** is untested and decisive — and the single-run
+OpenAI/Gemini numbers carry the same single-draw uncertainty that inflated
+Claude's first run. See §3.3–§3.4.
 
 ---
 
@@ -211,11 +218,33 @@ each agent paired against the SPY from its own run — SPY's median 1-yr return 
 | claude_balanced | 13% | −16.0% | −35.7% … +8.5% | +2.4% | 41% |
 | gemini_conservative | 12% | −17.0% | −36.3% … +7.1% | +1.4% | 44% |
 
-`claude_aggressive` is the **only agent above a coin-flip on a real margin** —
-and the only one whose edge survives the risk adjustment the random control's
-does not. Its per-quarter record: beat SPY in 2024 Q2, 2024 Q4, 2025 Q1,
-2025 Q2 (+18.0% vs +10.5%), and 2025 Q3 (+22.6% vs +8.2%); trailed in 2024 Q1,
-2024 Q3, 2025 Q4. The two 2025 blowout quarters carry much of the edge.
+`claude_aggressive` is the **only agent above a coin-flip**. **These tables are
+each from a single run; the Claude-aggressive row is its *first* run and later
+proved to be the high draw** — see §3.4 for the three-run reproducibility result
+that revises it down to a 60% beat-rate / +4.4% margin. The single-run OpenAI and
+Gemini rows have not been repeated and carry the same single-draw uncertainty.
+
+### 3.4 Reproducibility of the Claude-aggressive result — 3 runs, same 8 quarters
+
+LLM output is stochastic even at temperature 0, so the headline run was repeated
+twice more on the identical quarters. The edge decayed each time:
+
+| Run | Prob. beat SPY | Median margin | 2-yr compounded | Qtrs beat SPY |
+|---|---|---|---|---|
+| Original | 71% | +11.2% | +84.1% | 5/8 |
+| Repeat 1 | 61% | +4.7% | +61.9% | 4/8 |
+| Repeat 2 | 45% | −2.0% | +43.8% | 3/8 |
+| **Pooled (1,482 day-pairs)** | **60%** | **+4.4%** | — | — |
+
+Two things stand out. First, the **per-quarter wins don't reproduce**: the
+original won big on 2025 Q2–Q3, Repeat 1 on 2024 Q1 and 2025 Q4, Repeat 2 on
+2024 Q4 — the agent trades very differently each run, so the edge can't be
+pinned to specific quarters. It is a **diffuse, noisy, mildly positive tilt**, not
+a repeatable playbook. Second, the **direction is consistent** (all three runs
+cluster around or above SPY; none collapsed) while the **random control swung
+59% → 11% → 18%** across its draws — so Claude staying near/above a coin-flip
+every time, against a baseline that flip-flops, is the actual signal. But at a
+pooled **60% / +4.4%** with a −21% tail, it is a weak edge, not a dependable one.
 
 ---
 
@@ -244,30 +273,30 @@ does not. Its per-quarter record: beat SPY in 2024 Q2, 2024 Q4, 2025 Q1,
    beat-probability). Only pooling across quarters reveals it has no edge. Any
    claim from 1–2 quarters would have been noise.
 
-6. **One model broke the pattern — Claude Haiku 5.5, aggressive.** Extending to
-   OpenAI and Anthropic, every persona kept losing to SPY *except* Claude's
-   aggressive agent: 71% beat-probability, +11.2% median margin, +84% vs +49%
-   over two years, 5/8 quarters. Unlike the random control (which "won" the
-   2-year total purely on variance at a thin +5.7% margin and a 20% loss rate),
-   Claude-aggressive posted **high Sharpe in its winning quarters** (+3.3 to
-   +4.7) and once beat SPY on *lower* volatility — a risk-adjusted edge, not just
-   a bigger bet. It is the first real market-beating signal in this benchmark.
-7. **…but the same discipline that sank "aggressive looks great" applies here.**
-   The edge leans on two strong quarters (2025 Q2–Q3); the 2-year path is one
-   realization; and — unlike the Gemini study — **no random control was run on
-   these exact Claude quarters**, so luck has not been bounded on the same draws.
-   The persona matters too: Claude *balanced* failed as badly as everyone else
-   (13%). Treat §3.3's Claude result as a hypothesis to confirm, not a verdict.
+6. **One model broke the pattern — but modestly. Claude Haiku 5.5, aggressive.**
+   Extending to OpenAI and Anthropic, every persona kept losing to SPY *except*
+   Claude's aggressive agent. Its first run looked spectacular (71% beat-rate,
+   +84% / 2yr), but three runs on identical quarters decayed 71% → 61% → 45%
+   (one run below SPY). **Pooled, the real edge is 60% beat-rate / +4.4% median
+   margin** — above a coin-flip, but small, with a −21% downside tail. Still, it
+   is the only agent to stay above 50% across repeats, while the random control
+   swung 59/11/18% — so the tilt is real, just not large.
+7. **The same discipline that sank "aggressive looks great" applies here too.**
+   The headline 71% was the lucky draw; the per-quarter wins don't reproduce
+   (§3.4); Claude *balanced* failed like everyone else (13%); and — decisively —
+   the whole result is **bull-market only** (2024–25 SPY +49%). An aggressive
+   long-only agent amplifying a rising market can post a small edge through beta
+   alone. The bear-regime test (2022) is untested and will likely be decisive.
 
-**Bottom line:** within a rigorous benchmark, **no Gemini or OpenAI persona
-showed risk-adjusted skill versus passive indexing** — the best merely
-approximated a slightly-worse index fund, the rest destroyed value, and a random
-control matched or beat them all. The one exception is **Claude Haiku 5.5
-(aggressive)**, which beat SPY on both raw and risk-adjusted terms across eight
-quarters. That turns the headline from a clean negative into a **mostly-negative
-with one confirmable positive**: most LLM agents can't beat the market here, but
-at least one configuration did — pending a same-quarter random-control check to
-rule out luck.
+**Bottom line:** within a rigorous benchmark, **eight of nine LLM agents showed
+no edge versus passive indexing** — most trailed SPY outright, and a random
+control confirmed the baseline has none. The one exception, **Claude Haiku 5.5
+(aggressive)**, has a **real but modest tilt** (pooled 60% beat-rate, +4.4%
+margin over three runs) — not the market-beater its first run suggested, not yet
+tested in a down market, and nowhere near the consistency a usable/income-grade
+strategy would need. The honest headline: **mostly negative, with one small,
+fragile, bull-market-only positive that still needs a bear-market test before it
+means anything.**
 
 ---
 
@@ -276,11 +305,11 @@ rule out luck.
 - **Three model families now** (Gemini 3.8 Flash full roster; OpenAI `gpt-6-luna`
   and Claude Haiku 5.5 on balanced + aggressive). Still small/fast-tier only —
   frontier/reasoning-tier models and other personas may differ.
-- **Claude-aggressive needs a confirmation run.** No random control was run on
-  the same eight Claude quarters, so its 71% beat-rate has not been bounded
-  against luck on identical draws; and it has been run once. A re-run with
-  `random_control` alongside (and ideally a repeat seed) is the next step before
-  the positive result is treated as settled.
+- **Claude-aggressive is reproducible only in direction, not magnitude.** Three
+  runs gave 71% / 61% / 45% beat-rates (pooled 60%), so any single run's headline
+  is unreliable; the OpenAI and Gemini numbers are single runs and carry the same
+  risk. The **bear-market test (2022) is not yet run** and is the decisive open
+  question — the entire positive result is from a bull market.
 - **Two years, recent regimes.** No 2008/2020-scale crash in-sample.
 - **Lean historical info set** (no point-in-time news; §2.4), so historical and
   live behavior aren't identical.

@@ -1,23 +1,25 @@
 # Pooled backtest verdict — cross-model, 8 quarters (2024–2025)
 
 Three model families (Gemini 3.8 Flash, OpenAI `gpt-6-luna`, Anthropic
-`claude-haiku-5-5`) + a random control, each run over the identical eight
-quarters. Each agent is paired against the SPY buy-and-hold from its own run
-(SPY's median 1-yr return is +21.8% across all runs). ~500 agent/SPY day-pairs
-per agent.
+`claude-haiku-5-5`) + a random control, over the identical eight quarters. Each
+agent is paired against the SPY buy-and-hold from its own run (SPY median 1-yr
++21.8–22.4%). ~500 day-pairs per single-run agent.
 
-> The Anthropic numbers are from the clean re-run after fixing a thinking-block
-> API bug that had flat-lined the first Claude batch (see `FINDINGS.md` §3.3).
+> **Reproducibility.** `claude_aggressive` was run **three times** on the same 8
+> quarters to separate signal from LLM run-to-run noise; its row below is the
+> **pooled 3-run estimate** (1,482 day-pairs). The single-run OpenAI and Gemini
+> numbers have **not** been repeated, so they carry single-draw uncertainty too
+> (Claude's first run alone read 71% — see the spread note). The Anthropic data
+> is post-fix (thinking-block bug, `FINDINGS.md` §3.3).
 
 ## Does the agent beat SPY? (252d ≈ 1.0y, paired bootstrap)
 
-Same bootstrapped days applied to agent and SPY together, then terminal wealth
-compared. **Prob. beat SPY** near 50% = coin-flip (no edge).
+Near 50% = coin-flip (no edge).
 
 | Agent | Prob. beat SPY | Median margin vs SPY | 90% band (p5…p95) |
 |---|---|---|---|
-| claude_aggressive | 71% | +11.2% | -17.8% … +52.3% |
-| random_control | 59% | +5.7% | -27.8% … +63.3% |
+| claude_aggressive (3-run pooled) | 60% | +4.4% | -21.4% … +39.7% |
+| random_control | 14% | -22.6% | -47.3% … +15.9% |
 | gemini_balanced | 40% | -4.0% | -26.1% … +24.9% |
 | gemini_aggressive | 27% | -17.6% | -50.9% … +38.0% |
 | chatgpt_balanced | 25% | -9.7% | -29.8% … +15.1% |
@@ -25,27 +27,32 @@ compared. **Prob. beat SPY** near 50% = coin-flip (no edge).
 | claude_balanced | 13% | -16.0% | -35.7% … +8.5% |
 | gemini_conservative | 12% | -17.0% | -36.3% … +7.1% |
 
-## Return distribution (252d ≈ 1.0y, IID bootstrap of daily returns)
+**`claude_aggressive` run-to-run spread (same 8 quarters):**
 
-Resampled forward paths from each agent's observed daily returns. **Not a
-forecast** — it shows the spread the observed daily behaviour implies if it
-persisted. Bands are only as reliable as the input sample.
+| Run | Prob. beat SPY | Median margin | 2-yr compounded | Qtrs beat SPY |
+|---|---|---|---|---|
+| Original | 71% | +11.2% | +84.1% | 5/8 |
+| Repeat 1 | 61% | +4.7% | +61.9% | 4/8 |
+| Repeat 2 | 45% | −2.0% | +43.8% | 3/8 |
+| **Pooled** | **60%** | **+4.4%** | — | — |
+
+## Return distribution (252d ≈ 1.0y, IID bootstrap of daily returns)
 
 | Agent | Median ret | 90% band (p5…p95) | Median $10k→ | Prob. loss |
 |---|---|---|---|---|
-| claude_aggressive | +36.0% | +2.0% … +81.5% | $13,605 ($10,205–$18,148) | 4% |
-| random_control | +29.6% | -22.4% … +111.6% | $12,962 ($7,757–$21,156) | 20% |
-| spy_buy_hold | +21.8% | -5.7% … +59.7% | $12,184 ($9,427–$15,966) | 10% |
+| claude_aggressive (3-run) | +28.0% | -2.5% … +67.4% | $12,802 ($9,750–$16,743) | 7% |
+| spy_buy_hold | +22.4% | -6.0% … +60.3% | $12,241 ($9,400–$16,034) | 11% |
 | gemini_balanced | +17.5% | -11.1% … +56.3% | $11,747 ($8,887–$15,628) | 16% |
 | chatgpt_balanced | +10.1% | -2.2% … +24.9% | $11,015 ($9,778–$12,493) | 10% |
 | claude_balanced | +2.4% | -14.2% … +21.5% | $10,237 ($8,578–$12,151) | 41% |
 | gemini_conservative | +1.4% | -12.9% … +18.0% | $10,139 ($8,708–$11,796) | 44% |
 | gemini_aggressive | +0.8% | -44.6% … +82.3% | $10,078 ($5,540–$18,232) | 49% |
+| random_control | -5.6% | -41.6% … +52.7% | $9,435 ($5,839–$15,272) | 57% |
 | chatgpt_aggressive | -2.8% | -30.7% … +36.0% | $9,724 ($6,933–$13,603) | 56% |
 
-**Takeaway:** 8 of 9 LLM agents fail to beat SPY. The sole exception is
-`claude_aggressive` — the only agent above a coin-flip on a real margin, and the
-only one whose edge is risk-adjusted (the random control's +5.7% margin is pure
-variance). Its edge leans on two strong 2025 quarters and has not yet been
-checked against a same-quarter random control; confirm before treating as
-settled. Full detail in `FINDINGS.md`.
+**Takeaway:** Across three model families only `claude_aggressive` beats SPY, and
+on repetition the edge shrinks to a **modest 60% beat-rate / +4.4% median margin**
+— real but small, with one of three runs landing *below* SPY and a −21% downside
+tail. It is also entirely a **bull-market** result; whether the tilt survives a
+bear regime (2022) is untested and decisive. Not yet an income-grade edge. Full
+detail in `FINDINGS.md`.
