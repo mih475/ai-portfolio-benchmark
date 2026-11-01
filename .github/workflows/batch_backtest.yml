@@ -5,6 +5,10 @@ name: Batch Backtest (multi-quarter)
 # then an aggregate job pools all quarters' daily (agent, SPY) pairs and runs the
 # paired bootstrap for a combined verdict. Default roster is the cheap
 # aggressive + random control at tool budget 4.
+#
+# The set of quarters is now an input: a `prepare` job turns a compact list like
+# "2022Q1 2022Q2 2022Q3 2022Q4" into the job matrix, so any regime (e.g. the 2022
+# bear market) is a one-click run without editing this file.
 
 on:
   workflow_dispatch:
@@ -17,24 +21,55 @@ on:
         description: "Per-agent tool-call budget (lower = cheaper)"
         required: true
         default: "4"
+      quarters:
+        description: "Quarters to run (space/comma separated, e.g. '2022Q1 2022Q2 2022Q3 2022Q4')"
+        required: true
+        default: "2024Q1 2024Q2 2024Q3 2024Q4 2025Q1 2025Q2 2025Q3 2025Q4"
 
 jobs:
+  prepare:
+    # Turn the free-form `quarters` input into a JSON matrix the quarter job can
+    # consume via fromJSON. Each YYYYQn token becomes {name, start, end}.
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.build.outputs.matrix }}
+    steps:
+      - id: build
+        env:
+          QUARTERS: ${{ inputs.quarters }}
+        run: |
+          python3 - <<'PY'
+          import json, os, re
+          raw = os.environ["QUARTERS"]
+          bounds = {"1": ("01-01", "03-31"), "2": ("04-01", "06-30"),
+                    "3": ("07-01", "09-30"), "4": ("10-01", "12-31")}
+          out = []
+          for tok in re.split(r"[,\s]+", raw.strip()):
+              if not tok:
+                  continue
+              m = re.fullmatch(r"(\d{4})[Qq]([1-4])", tok)
+              if not m:
+                  raise SystemExit(f"bad quarter token {tok!r} — use e.g. 2022Q1")
+              y, q = m.group(1), m.group(2)
+              s, e = bounds[q]
+              out.append({"name": f"{y}Q{q}", "start": f"{y}-{s}", "end": f"{y}-{e}"})
+          if not out:
+              raise SystemExit("no quarters parsed from input")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write("matrix=" + json.dumps(out) + "\n")
+          print("Matrix:")
+          print(json.dumps(out, indent=2))
+          PY
+
   quarter:
+    needs: prepare
     runs-on: ubuntu-latest
     timeout-minutes: 330
     strategy:
       max-parallel: 3          # cap concurrency so parallel jobs don't exhaust the API RPM
       fail-fast: false         # one bad quarter must not cancel the rest
       matrix:
-        q:
-          - { name: "2024Q1", start: "2024-01-01", end: "2024-03-31" }
-          - { name: "2024Q2", start: "2024-04-01", end: "2024-06-30" }
-          - { name: "2024Q3", start: "2024-07-01", end: "2024-09-30" }
-          - { name: "2024Q4", start: "2024-10-01", end: "2024-12-31" }
-          - { name: "2025Q1", start: "2025-01-01", end: "2025-03-31" }
-          - { name: "2025Q2", start: "2025-04-01", end: "2025-06-30" }
-          - { name: "2025Q3", start: "2025-07-01", end: "2025-09-30" }
-          - { name: "2025Q4", start: "2025-10-01", end: "2025-12-31" }
+        q: ${{ fromJSON(needs.prepare.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
