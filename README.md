@@ -9,10 +9,14 @@
 > feature is verified.
 >
 > **📊 Results & methodology: see [`FINDINGS.md`](FINDINGS.md).** Headline: over
-> 8 quarters (2024–2025), no Gemini persona beat SPY buy-and-hold (+48.6% / 2yr).
-> Best was balanced (+37.8%, 40% beat-rate); aggressive (+1.6%) and conservative
-> (+3.2%) failed badly; a random control matched or beat all three. No
-> risk-adjusted edge.
+> 8 quarters (2024–2025) across three model families (Gemini, OpenAI, Anthropic),
+> **8 of 9 agents failed to beat SPY buy-and-hold** (+48.6% / 2yr). The one
+> exception is **Claude Haiku 5.5 (aggressive)**: +84% / 2yr, 5/8 quarters, 71%
+> bootstrap beat-rate with a +11.2% median margin and strong Sharpe — the first
+> risk-adjusted market-beating signal in the study (pending a same-quarter
+> random-control confirmation). Every other persona — Gemini (≤40%), OpenAI
+> (25% / 13%), Claude-balanced (13%) — trailed; a random control beat the rest on
+> variance alone.
 
 A high-fidelity project for benchmarking the financial decision-making of **18 autonomous AI agents** (6 models × 3 personas) in a deterministic, rules-based trading simulation.
 
