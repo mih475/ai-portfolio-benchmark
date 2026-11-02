@@ -11,12 +11,15 @@
 > **📊 Results & methodology: see [`FINDINGS.md`](FINDINGS.md).** Headline: over
 > 8 quarters (2024–2025) across three model families (Gemini, OpenAI, Anthropic),
 > **8 of 9 agents failed to beat SPY buy-and-hold** (+48.6% / 2yr). The only
-> exception, **Claude Haiku 5.5 (aggressive)**, looked spectacular in one run
-> (71% beat-rate) but decayed to **60% beat-rate / +4.4% median margin** when
-> pooled over three repeats (71% → 61% → 45%) — a real but modest, high-variance
-> tilt, and entirely bull-market (a 2022 bear-market test is still pending).
-> Every other persona — Gemini (≤40%), OpenAI (25% / 13%), Claude-balanced (13%)
-> — trailed; a random control swung 59/11/18% across draws, i.e. pure noise.
+> exception, **Claude Haiku 5.5 (aggressive)**, is not a return-machine — its
+> bull-market edge is modest and noisy (pooled **60% beat-rate / +4.4%** over 3
+> repeats; the flashy single-run +84% didn't reproduce). Its real, *reproducible*
+> strength is **capital preservation in bear markets**: three runs of 2022 ended
+> ≈flat (−0.0 / −4.3 / −2.4%) vs SPY **−22%**, beating SPY in all 12 quarter-runs
+> with single-digit drawdowns, by going to cash — an **86% bear beat-rate that
+> did not decay**. A defensive, drawdown-averse agent (promising for income;
+> needs a forward paper-trade test), not a market-beater. Every other persona —
+> Gemini (≤40%), OpenAI (25% / 13%), Claude-balanced (13%) — trailed.
 
 A high-fidelity project for benchmarking the financial decision-making of **18 autonomous AI agents** (6 models × 3 personas) in a deterministic, rules-based trading simulation.
 

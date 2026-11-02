@@ -13,12 +13,13 @@ Can an autonomous LLM trading agent **beat a passive S&P 500 buy-and-hold
 run rigorously (no look-ahead, enforced rules, a real benchmark, and enough
 data to separate skill from luck)?
 
-**Short answer: mostly no — with one modest, bull-market-only exception.** Across
-three model families (Google Gemini, OpenAI, Anthropic) and nine LLM agents run
-over the same eight quarters (2024–2025), **eight of nine failed to beat SPY
-buy-and-hold** (+48.6% / ≈+22% median 1-yr). The only agent that beats it is
-**Anthropic Claude Haiku 5.5 on the *aggressive* persona** — but the edge is
-**small and noisy**, not the headline it first looked like.
+**Short answer: mostly no — except one agent that wins by playing defense.**
+Across three model families (Google Gemini, OpenAI, Anthropic) and nine LLM
+agents run over the same eight quarters (2024–2025), **eight of nine failed to
+beat SPY buy-and-hold** (+48.6% / ≈+22% median 1-yr). The only agent that beats
+it is **Anthropic Claude Haiku 5.5 on the *aggressive* persona** — but not as the
+return-machine it first looked like: its bull-market edge is small and noisy, and
+its real, reproducible strength is **capital preservation in down markets**.
 
 Run once, Claude-aggressive looked spectacular: +84% over two years, 71%
 bootstrap beat-rate, +11.2% median margin. But repeating the *identical* run
@@ -37,12 +38,23 @@ noise — 59% beat-rate in one draw, 11–18% in two others, averaging well belo
 — confirming the baseline has no persistent edge (and that Claude's staying
 *above* a coin-flip across three draws is itself the signal).
 
-Two caveats keep even the modest Claude edge from being a usable result: it is
-**entirely a bull-market** finding (2024–25 SPY +49%), and an aggressive long-only
-agent amplifying an uptrend can look good purely through beta. Whether the tilt
-survives a **bear regime (2022)** is untested and decisive — and the single-run
-OpenAI/Gemini numbers carry the same single-draw uncertainty that inflated
-Claude's first run. See §3.3–§3.4.
+**The reproducible value is downside protection, not upside alpha.** The bull
+edge is small and noisy — but the **2022 bear-market test (§3.5) is where
+Claude-aggressive is unambiguous and *stable***. Across three runs of the 2022
+bear (SPY −21.8%), it ended essentially flat each time (−0.0% / −4.3% / −2.4%),
+beat SPY in **all 12 quarter-runs**, held single-digit drawdowns against SPY's
+13–20%, and pooled to an **86% beat-rate** — by **going to cash** (54–100% cash,
+sitting out the worst quarters entirely). Unlike the bull edge, this did not
+decay on repetition.
+
+So the honest characterization of the one agent that stands out is not
+"market-beater" but **defensive, cash-timing strategy**: it gives up some upside
+in bull markets (modest, noisy ~60% edge) and sidesteps most of the downside in
+bear markets (large, *stable* ~86% edge). That asymmetry — participate modestly
+up, step aside down — is the drawdown-averse shape a usable/income strategy
+needs, and is the most promising result in this project. It remains one model,
+one bear episode, in a backtest with upward biases (§5); the single-run
+OpenAI/Gemini numbers also carry single-draw uncertainty. See §3.3–§3.5.
 
 ---
 
@@ -246,6 +258,39 @@ cluster around or above SPY; none collapsed) while the **random control swung
 every time, against a baseline that flip-flops, is the actual signal. But at a
 pooled **60% / +4.4%** with a −21% tail, it is a weak edge, not a dependable one.
 
+### 3.5 Bear-market regime test — 2022 (SPY −21.8%), 3 runs
+
+The 2024–25 study is all bull market, where an aggressive long-only agent can
+look good through beta alone. The decisive test is a down market. 2022 was run
+three times (`claude_aggressive` + random control), same discipline as §3.4:
+
+| Run | Prob. beat SPY | Median margin | 2022 compounded | Qtrs beat SPY |
+|---|---|---|---|---|
+| 2022 run 1 | 87% | +28.7% | −0.0% | 4/4 |
+| 2022 run 2 | 84% | +23.5% | −4.3% | 4/4 |
+| 2022 run 3 | 84% | +25.4% | −2.4% | 4/4 |
+| **Pooled (741 pairs)** | **86%** | **+25.8%** | — | — |
+| *SPY, same window* | — | — | *−21.8%* | — |
+| *random control (pooled)* | *3%* | *−40.8%* | *≈ −53%* | *—* |
+
+Unlike the bull edge, **this does not decay** — all three runs cluster at 84–87%,
+all beat SPY in every quarter, and all finish roughly flat while SPY loses ~22%
+and the random control is destroyed (−53%). Drawdowns were **single-digit**
+(2–8%) versus SPY's 13–20%.
+
+**Mechanism — it goes to cash.** Quarter-end cash across the runs ranged 54–100%,
+and the agent sat out the worst quarters entirely (100% cash in 2022 Q2 or Q3,
+depending on run). It chose *no trade* on the large majority of days. So the
+"aggressive" agent is, in practice, **drawdown-averse**: when macro/technical
+conditions deteriorate it stops buying and holds cash, which costs upside in a
+bull (hence the modest, noisy §3.4 edge) but preserves capital in a bear.
+
+Note this is **capital preservation, not profit** — it ended 2022 ≈flat, not up.
+For a passive investor that still dominates a −22% index year, and the asymmetry
+(modest up, defensive down) is the genuinely income-relevant property. Caveat: it
+is still one model family, one bear episode, inside a backtest with upward biases
+(§5); the signal warrants a live/paper-traded forward test, not capital yet.
+
 ---
 
 ## 4. Findings
@@ -281,22 +326,28 @@ pooled **60% / +4.4%** with a −21% tail, it is a weak edge, not a dependable o
    margin** — above a coin-flip, but small, with a −21% downside tail. Still, it
    is the only agent to stay above 50% across repeats, while the random control
    swung 59/11/18% — so the tilt is real, just not large.
-7. **The same discipline that sank "aggressive looks great" applies here too.**
-   The headline 71% was the lucky draw; the per-quarter wins don't reproduce
-   (§3.4); Claude *balanced* failed like everyone else (13%); and — decisively —
-   the whole result is **bull-market only** (2024–25 SPY +49%). An aggressive
-   long-only agent amplifying a rising market can post a small edge through beta
-   alone. The bear-regime test (2022) is untested and will likely be decisive.
+7. **…but its real strength is defense, not offense (§3.5).** In three runs of
+   the 2022 bear market it ended ≈flat (−0.0 / −4.3 / −2.4%) while SPY fell 22%,
+   beat SPY in all 12 quarter-runs, held single-digit drawdowns, and pooled to an
+   **86% beat-rate that did *not* decay** — by going to cash (54–100%) and sitting
+   out the worst quarters. So the headline number people would quote (the bull
+   "+84%") is the least reliable thing about it; the durable, reproducible
+   property is **capital preservation in down markets**. The weak-but-real bull
+   edge and the strong-stable bear defense are the same trait — a drawdown-averse
+   agent that participates modestly up and steps aside down.
 
 **Bottom line:** within a rigorous benchmark, **eight of nine LLM agents showed
 no edge versus passive indexing** — most trailed SPY outright, and a random
-control confirmed the baseline has none. The one exception, **Claude Haiku 5.5
-(aggressive)**, has a **real but modest tilt** (pooled 60% beat-rate, +4.4%
-margin over three runs) — not the market-beater its first run suggested, not yet
-tested in a down market, and nowhere near the consistency a usable/income-grade
-strategy would need. The honest headline: **mostly negative, with one small,
-fragile, bull-market-only positive that still needs a bear-market test before it
-means anything.**
+control confirmed the baseline has none. The exception, **Claude Haiku 5.5
+(aggressive)**, is not the market-beater its first run suggested: its bull-market
+edge is modest and noisy (pooled 60% / +4.4%). But it has one reproducible,
+regime-robust property — **it preserves capital in bear markets** (three 2022
+runs ≈flat vs SPY −22%, 86% pooled beat-rate, single-digit drawdowns, by holding
+cash). The honest headline: **mostly negative, with one genuinely promising
+positive — a defensive, drawdown-averse agent whose value is avoiding losses, not
+chasing gains.** That asymmetry is income-relevant and now warrants a forward
+(paper-traded) test — but it is still one model, one bear episode, in a backtest
+with upward biases, so it is not yet a reason to deploy capital.
 
 ---
 

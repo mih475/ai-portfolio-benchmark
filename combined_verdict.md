@@ -50,9 +50,26 @@ Near 50% = coin-flip (no edge).
 | random_control | -5.6% | -41.6% … +52.7% | $9,435 ($5,839–$15,272) | 57% |
 | chatgpt_aggressive | -2.8% | -30.7% … +36.0% | $9,724 ($6,933–$13,603) | 56% |
 
-**Takeaway:** Across three model families only `claude_aggressive` beats SPY, and
-on repetition the edge shrinks to a **modest 60% beat-rate / +4.4% median margin**
-— real but small, with one of three runs landing *below* SPY and a −21% downside
-tail. It is also entirely a **bull-market** result; whether the tilt survives a
-bear regime (2022) is untested and decisive. Not yet an income-grade edge. Full
-detail in `FINDINGS.md`.
+## Bear-market regime test — 2022 (SPY −21.8%), 3 runs pooled
+
+The decisive test. Where the bull edge is modest and noisy, the bear result is
+large and **stable across repeats**:
+
+| Agent | Prob. beat SPY | Median margin | 2022 return (per run) |
+|---|---|---|---|
+| claude_aggressive (3-run pooled) | 86% | +25.8% | −0.0% / −4.3% / −2.4% |
+| random_control (pooled) | 3% | −40.8% | ≈ −53% |
+| spy_buy_hold | — | — | −21.8% |
+
+All three runs beat SPY in **every** quarter, finished ≈flat while SPY fell ~22%,
+and held **single-digit drawdowns** (2–8% vs SPY 13–20%) — by **going to cash**
+(54–100% cash, sitting out the worst quarters). This did not decay on repetition.
+
+**Takeaway:** Across three model families only `claude_aggressive` stands out, and
+its nature is now clear. The bull-market edge is **modest and noisy** (pooled 60%
+/ +4.4%, one of three runs below SPY) — but its **bear-market capital
+preservation is large and reproducible** (86% beat-rate, ≈flat vs SPY −22%, tiny
+drawdowns, via cash). It is a **defensive, drawdown-averse** agent — value in
+avoiding losses, not chasing gains. Income-relevant asymmetry, but still one
+model / one bear episode in a backtest with upward biases; warrants a forward
+paper-trade test, not capital. Full detail in `FINDINGS.md`.
