@@ -52,3 +52,6 @@ jobs:
 
       - name: Run Anthropic thinking-block fix test
         run: python3 v2/tests/test_anthropic_thinking.py
+
+      - name: Run live paper-trade runner test
+        run: python3 v2/tests/test_live_runner.py

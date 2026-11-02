@@ -242,7 +242,10 @@ V2_ROOT = pathlib.Path(__file__).parent
 DATA_DIR = V2_ROOT / "data"
 SNAPSHOTS_DIR = DATA_DIR / "snapshots"
 PLAYBOOKS_DIR = DATA_DIR / "playbooks"
-PORTFOLIOS_DIR = DATA_DIR / "portfolios"
+# Portfolio state dir. Overridable via env so the live paper-trading runner can
+# persist its own, committed portfolio (e.g. v2/data/paper/portfolios) without
+# colliding with throwaway backtest state in the default location.
+PORTFOLIOS_DIR = pathlib.Path(os.getenv("PORTFOLIOS_DIR") or (DATA_DIR / "portfolios"))
 LOGS_DIR = V2_ROOT / "logs"
 TOOL_CALLS_DIR = LOGS_DIR / "tool_calls"
 DECISIONS_DIR = LOGS_DIR / "decisions"

@@ -14,6 +14,12 @@ v2/data/snapshots/*.json
 v2/data/portfolios/*.json
 !v2/data/portfolios/*_history.json
 
+# Live paper-trading state is the durable track record — keep it committed.
+# (v2/data/paper/ is not covered by the ignores above, but be explicit so a
+# later broadening of the rules can't silently drop the ledger.)
+!v2/data/paper/
+!v2/data/paper/**
+
 # IDE / System
 .agent/
 .vs/

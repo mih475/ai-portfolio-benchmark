@@ -82,7 +82,17 @@ Generate the MIH snapshot and execute all agents for a specific date:
 python -m v2.main --run-date 2026-04-07
 ```
 
-### 3. Dashboard Integration
+### 3. Live paper-trading (forward test)
+Run the agent under test on live, unseen days with fake money, persisting one
+portfolio and a daily ledger — the test that removes the backtest biases. See
+[`PAPER_TRADING.md`](PAPER_TRADING.md).
+```bash
+PORTFOLIOS_DIR=v2/data/paper/portfolios python -m v2.live_runner
+```
+Or enable the **Paper Trade (live daily)** GitHub Actions workflow (runs weekdays
+after the close and commits the ledger back).
+
+### 4. Dashboard Integration
 The framework automatically exports data to the static web dashboard in `v1/logs/`.
 
 ---

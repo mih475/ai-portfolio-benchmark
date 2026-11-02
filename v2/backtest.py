@@ -42,16 +42,21 @@ def buy_hold_metrics(closes, capital: float = 10000.0) -> dict:
 
 
 def write_benchmark(start_iso: str, end_iso: str, out_dir, ticker: str = "SPY",
-                    capital: float = 10000.0):
+                    capital: float = 10000.0, period: str = "3mo"):
     """Fetch `ticker` closes over [start, end] and write a buy-and-hold row the
-    summarizer will include. Best-effort: on any failure, writes nothing."""
+    summarizer will include. Best-effort: on any failure, writes nothing.
+
+    `period` is the yfinance lookback window to pull before slicing to
+    [start, end]; it must comfortably cover that span (a single backtest quarter
+    fits in 3mo; the live runner passes a longer period as the paper-trade grows).
+    """
     try:
         import pandas as pd  # noqa: F401
         from .price_provider import window_download
 
         start = date.fromisoformat(start_iso)
         end = date.fromisoformat(end_iso)
-        data = window_download([ticker], as_of=end, period="3mo")
+        data = window_download([ticker], as_of=end, period=period)
         if data is None or getattr(data, "empty", True):
             logger.warning(f"benchmark {ticker}: no data, skipping")
             return
