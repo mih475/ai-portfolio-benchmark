@@ -227,9 +227,12 @@ def run_live(today: date | None = None, agents: list | None = None) -> int:
     # Market-day guard: only trade/log on a real trading day.
     ltd = latest_trading_date(today)
     if ltd is None:
+        # Couldn't verify (price fetch failed) — surface as a real failure so a
+        # persistent data problem is visible, rather than silently doing nothing.
         logger.warning("Could not verify market day (price fetch failed); aborting.")
-        return 2
+        return 3
     if ltd != today:
+        # Confirmed non-market day (weekend/holiday): a benign no-op, not an error.
         logger.info(f"{today_iso} is not a market day (latest SPY bar {ltd}); skipping.")
         return 2
 
@@ -283,7 +286,10 @@ def main():
 
     d = datetime.strptime(args.date, "%Y-%m-%d").date() if args.date else None
     agents = [a.strip() for a in args.agents.split(",")] if args.agents else None
-    raise SystemExit(run_live(d, agents))
+    code = run_live(d, agents)
+    # A confirmed non-market day (code 2) is a benign no-op, not a CI failure.
+    # Genuine problems (code 3 = unverifiable data; exceptions) stay non-zero.
+    raise SystemExit(0 if code == 2 else code)
 
 
 if __name__ == "__main__":

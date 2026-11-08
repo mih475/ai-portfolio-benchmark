@@ -21,8 +21,10 @@ on:
         description: "Force a run date YYYY-MM-DD (blank = today)"
         required: false
         default: ""
-  schedule:
-    - cron: "0 22 * * 1-5"
+  # Daily schedule paused while the live path is being debugged (it was failing
+  # every run). Re-enable by uncommenting once a manual dispatch goes green.
+  # schedule:
+  #   - cron: "0 22 * * 1-5"
 
 # Never let two daily runs overlap and race on the committed state.
 concurrency:
