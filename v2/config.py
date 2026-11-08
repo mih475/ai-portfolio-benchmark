@@ -182,6 +182,25 @@ def _build_agents() -> list[Agent]:
     return agents
 AGENTS = {a.id: a for a in _build_agents()}
 
+# ── Playbook-experiment variants ──────────────────────────────────────────────
+# Same model (claude-haiku-5-5) and AGGRESSIVE persona as claude_aggressive, but
+# each loads its own playbook (v2/data/playbooks/<id>.md). This lets us pit a
+# modified playbook head-to-head against the unchanged claude_aggressive baseline
+# in the SAME batch, on identical market data. Add an id here + a matching
+# playbook file to spin up a new variant.
+#   • claude_robust  — ATR stops, vol-targeted sizing, earlier de-risk (defense)
+#   • claude_return  — trailing-only profits, re-entry protocol (upside capture)
+for _variant_id, _variant_name in [
+    ("claude_robust", "Claude (Robust)"),
+    ("claude_return", "Claude (Return)"),
+]:
+    AGENTS[_variant_id] = Agent(
+        id=_variant_id,
+        display_name=_variant_name,
+        provider_key="claude",
+        persona=Persona.AGGRESSIVE,
+    )
+
 # ─────────────────────────────────────────────
 # MCP Tool Configuration
 # ─────────────────────────────────────────────
