@@ -211,13 +211,30 @@ def update_spy_benchmark(inception_iso: str, today_iso: str, out_dir: Path):
         logger.warning(f"SPY benchmark update failed: {e}")
 
 
+def eastern_today() -> date:
+    """Today's date on the US market clock (America/New_York), not UTC.
+
+    The job is scheduled after the US close, but a runner's wall clock is UTC,
+    which rolls to tomorrow at 19:00–20:00 US Eastern — before that evening's
+    date should advance for a US trader. Anchoring to Eastern keeps "today"
+    aligned with the trading calendar so the market-day check matches the latest
+    SPY bar. Falls back to UTC if tz data is unavailable.
+    """
+    try:
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+        return datetime.now(ZoneInfo("America/New_York")).date()
+    except Exception:
+        return date.today()
+
+
 def run_live(today: date | None = None, agents: list | None = None) -> int:
     """Run one live paper-trading day. Returns an exit code (0 ok, 2 skipped)."""
     from .config import PORTFOLIOS_DIR
     out_dir = Path(PORTFOLIOS_DIR)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    today = today or date.today()
+    today = today or eastern_today()
     today_iso = today.isoformat()
     agents = agents or DEFAULT_AGENTS
     llm_agents = [a for a in agents if a != "random_control"]
