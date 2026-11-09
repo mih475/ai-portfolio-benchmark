@@ -21,8 +21,12 @@ on:
         description: "Force a run date YYYY-MM-DD (blank = today)"
         required: false
         default: ""
-  schedule:
-    - cron: "0 22 * * 1-5"   # 22:00 UTC = 17:00/18:00 US Eastern, after the close
+  # Schedule paused again: the live-trading path (run_all_agents on today's date)
+  # has never been confirmed to succeed in CI, and its scheduled runs were
+  # failing and emailing. Re-enable ONLY after one manual dispatch runs the live
+  # path green (trigger it after a weekday US market close).
+  # schedule:
+  #   - cron: "0 22 * * 1-5"
 
 # Never let two daily runs overlap and race on the committed state.
 concurrency:
