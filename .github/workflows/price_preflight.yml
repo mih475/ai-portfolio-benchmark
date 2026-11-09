@@ -1,0 +1,34 @@
+name: Historical Price Preflight (no AI calls)
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_date:
+        description: "Historical market date (YYYY-MM-DD)"
+        required: true
+        default: "2022-06-15"
+      tickers:
+        description: "Comma-separated known listed tickers to validate"
+        required: true
+        default: "SPY,PLTR,HPQ"
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      - name: Install price dependencies (no model packages required)
+        run: pip install yfinance pandas numpy
+      - name: Verify historical bars without an LLM
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+          BACKTEST_STRICT_PRICES: "1"
+        run: |
+          python -m v2.scripts.preflight_prices \
+            --date "${{ inputs.run_date }}" \
+            --tickers "${{ inputs.tickers }}"
