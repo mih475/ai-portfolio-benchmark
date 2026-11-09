@@ -187,7 +187,7 @@ def day_ohlc(tickers, as_of=None, _downloader=None) -> dict:
         # for Monday would manufacture an opening fill and an incorrect stop.
         import math
         out = {}
-        multi = len(tickers) > 1
+        multi = getattr(getattr(data, "columns", None), "nlevels", 1) > 1
         historical = (os.getenv("BACKTEST_STRICT_PRICES") == "1"
                       and as_of is not None and not is_live(as_of))
         for tkr in tickers:
