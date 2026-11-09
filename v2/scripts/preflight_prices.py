@@ -34,7 +34,10 @@ def main():
         raise SystemExit("FAIL: one-year history unavailable")
     for ticker in tickers:
         try:
-            close = history.xs(ticker, level=1, axis=1)["Close"].dropna()
+            if getattr(getattr(history, "columns", None), "nlevels", 1) > 1:
+                close = history.xs(ticker, level=1, axis=1)["Close"].dropna()
+            else:
+                close = history["Close"].dropna()
         except (KeyError, ValueError):
             raise SystemExit(f"FAIL: no history column for {ticker}")
         if close.empty or close.index[-1].date() != as_of:
