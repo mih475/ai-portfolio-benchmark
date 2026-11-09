@@ -21,12 +21,8 @@ on:
         description: "Force a run date YYYY-MM-DD (blank = today)"
         required: false
         default: ""
-  # Schedule paused again: the live-trading path (run_all_agents on today's date)
-  # has never been confirmed to succeed in CI, and its scheduled runs were
-  # failing and emailing. Re-enable ONLY after one manual dispatch runs the live
-  # path green (trigger it after a weekday US market close).
-  # schedule:
-  #   - cron: "0 22 * * 1-5"
+  schedule:
+    - cron: "0 22 * * 1-5"   # 22:00 UTC = 16:00 US Central (after the 15:00 CT close)
 
 # Never let two daily runs overlap and race on the committed state.
 concurrency:
@@ -70,6 +66,10 @@ jobs:
           QWEN_API_KEY: ${{ secrets.QWEN_API_KEY }}
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
           FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+          # Live mode (unlike historical backtests) calls Brave web-search for the
+          # market narrative and catalysts. Absent key degrades gracefully, but
+          # pass it if set so live news works.
+          BRAVE_API_KEY: ${{ secrets.BRAVE_API_KEY }}
         run: |
           AGENTS="${{ github.event.inputs.agents }}"
           AGENTS="${AGENTS:-claude_aggressive,random_control}"
