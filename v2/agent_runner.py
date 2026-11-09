@@ -44,7 +44,7 @@ from .portfolio_simulator import PortfolioSimulator
 logger = logging.getLogger(__name__)
 
 # Force propose_trades as a tool that MUST be called to end the turn.
-def get_trade_tool() -> dict:
+def get_trade_tool(agent_id: str | None = None) -> dict:
     # Load schema
     schema_path = Path(__file__).parent / "schemas" / "propose_trades.json"
     with open(schema_path) as f:
@@ -53,7 +53,18 @@ def get_trade_tool() -> dict:
     # Gemini/Google SDK is VERY strict: absolutely NO "$schema" key allowed in parameters
     if "$schema" in schema:
         del schema["$schema"]
-        
+
+    # Only ChatGPT-aggressive gets a corrected SELL envelope. The generic
+    # schema capped *all* orders at 25%, even though the existing simulator
+    # supports 100% SELLs. Do not change Claude's tool contract or paper flow.
+    if agent_id == "chatgpt_aggressive":
+        allocation = schema["properties"]["trades"]["items"]["properties"]["allocation_pct"]
+        allocation["maximum"] = 100
+        allocation["description"] = (
+            "BUY: 5-25% of total portfolio (simulator enforces tighter limits). "
+            "SELL: 5-100% of held position; 100 means close the position."
+        )
+
     return {
         "name": "propose_trades",
         "description": "Submit your final daily trading decisions. You MUST call this tool when you are done analyzing.",
@@ -133,8 +144,12 @@ def run_agent(agent_id: str, snapshot: dict, simulator: PortfolioSimulator,
         # Shared bars: use only the subset this agent needs.
         ohlc_data = {t: ohlc_data[t] for t in tickers_needed if t in ohlc_data}
 
-    # Execute simulator's daily tasks BEFORE LLM (so LLM sees accurate EOD portfolio)
-    simulator.check_stops_and_targets(ohlc_data, current_date)
+    # Strict historical simulation fills queued orders at the opening auction
+    # BEFORE evaluating intraday H/L stops. This covers newly opened positions
+    # on their entry day; the legacy live-paper ordering remains unchanged.
+    strict_backtest = os.getenv("BACKTEST_STRICT_PRICES") == "1"
+    if not strict_backtest:
+        simulator.check_stops_and_targets(ohlc_data, current_date)
 
     # Build fill/mark prices for the tickers we actually hold or have queued.
     # Primary source: the per-ticker OHLC bars fetched above.
@@ -147,12 +162,22 @@ def run_agent(agent_id: str, snapshot: dict, simulator: PortfolioSimulator,
     }
     open_prices = {tkr: bar["open"] for tkr, bar in ohlc_data.items()}
     close_prices = {tkr: bar["close"] for tkr, bar in ohlc_data.items()}
-    for tkr, price in watchlist_prices.items():
-        open_prices.setdefault(tkr, price)
-        close_prices.setdefault(tkr, price)
+    if strict_backtest:
+        # Watchlist close/last quote is NEVER a substitute for a T+1 opening fill.
+        # Stop the experiment instead of mispricing a position or cancelling its
+        # exit; this does not alter the existing live paper-trading workflow.
+        missing = sorted(set(tickers_needed) - set(ohlc_data))
+        if missing:
+            raise ValueError(f"Historical OHLC unavailable on {current_date}: {missing}")
+    else:
+        for tkr, price in watchlist_prices.items():
+            open_prices.setdefault(tkr, price)
+            close_prices.setdefault(tkr, price)
 
-    # T+1 fills happen at the session open; mark-to-market uses the session close.
+    # T+1 opening fills, then intraday stop/TP evaluation in strict backtests.
     simulator.execute_pending_orders(open_prices, current_date)
+    if strict_backtest:
+        simulator.check_stops_and_targets(ohlc_data, current_date)
     simulator.mark_to_market(close_prices, current_date)
 
     # Random agent bypasses LLM logic entirely
@@ -184,7 +209,7 @@ def run_agent(agent_id: str, snapshot: dict, simulator: PortfolioSimulator,
             if "parameters" in t and "$schema" in t["parameters"]:
                 del t["parameters"]["$schema"]
                 
-        tools.append(get_trade_tool())
+        tools.append(get_trade_tool(agent_id))
 
         # Build prompts
         sys_prompt = build_system_prompt(agent, playbook)
@@ -277,6 +302,10 @@ def run_all_agents(snapshot_date: str, agent_ids: list[str] | None = None):
         union_tickers.update(o.ticker for o in sim.pending_orders)
     shared_ohlc = day_ohlc(union_tickers, as_of=dt) if union_tickers else {}
     logger.info(f"Frozen shared price set for {len(shared_ohlc)}/{len(union_tickers)} tickers.")
+    if os.getenv("BACKTEST_STRICT_PRICES") == "1":
+        missing = sorted(union_tickers - set(shared_ohlc))
+        if missing:
+            raise ValueError(f"Backtest {snapshot_date}: no valid exact-session OHLC for {missing}")
 
     for i, agent_id in enumerate(agent_ids):
         # Apply jitter between agents (configurable; unneeded on a paid tier).

@@ -9,6 +9,7 @@ future changes can't silently break T+1 execution, slippage, sizing caps,
 validation, stop/TP triggers, or state persistence.
 """
 
+import os
 import sys
 import tempfile
 import traceback
@@ -293,6 +294,51 @@ def t_tp_fills_at_open_on_gap_up():
     assert len(txns) == 1
     assert approx(txns[0].price, round(13.0 * (1 - 0.001), 4)), txns[0].price
     assert txns[0].price > 12.0                                   # better than the target
+
+
+@test
+def t_strict_backtest_rejects_missing_close_without_changing_equity():
+    sim = new_sim()
+    sim.positions["ABC"] = Position("ABC", 10, 12.0, "2022-06-01", 10.0,
+                                    current_price=12.0)
+    sim.cash = 9_880.0
+    old = os.environ.get("BACKTEST_STRICT_PRICES")
+    os.environ["BACKTEST_STRICT_PRICES"] = "1"
+    try:
+        try:
+            sim.mark_to_market({}, "2022-06-02")
+            assert False, "missing bar must halt a historical valuation"
+        except ValueError as exc:
+            assert "ABC" in str(exc)
+        assert sim.daily_returns == []
+        assert sim.positions["ABC"].current_price == 12.0
+    finally:
+        if old is None:
+            os.environ.pop("BACKTEST_STRICT_PRICES", None)
+        else:
+            os.environ["BACKTEST_STRICT_PRICES"] = old
+
+
+@test
+def t_strict_backtest_rejects_invalid_close():
+    sim = new_sim()
+    sim.positions["ABC"] = Position("ABC", 10, 12.0, "2022-06-01", 10.0,
+                                    current_price=12.0)
+    old = os.environ.get("BACKTEST_STRICT_PRICES")
+    os.environ["BACKTEST_STRICT_PRICES"] = "1"
+    try:
+        for value in (0, -4, float("nan"), float("inf")):
+            try:
+                sim.mark_to_market({"ABC": value}, "2022-06-02")
+                assert False, f"invalid mark {value} accepted"
+            except ValueError:
+                pass
+        assert sim.daily_returns == []
+    finally:
+        if old is None:
+            os.environ.pop("BACKTEST_STRICT_PRICES", None)
+        else:
+            os.environ["BACKTEST_STRICT_PRICES"] = old
 
 
 # ─────────────────────────────────────────────────────────────────────────

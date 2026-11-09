@@ -335,14 +335,26 @@ def discover_catalysts(tickers: List[str]) -> Dict[str, str]:
         return {}
 
 def compute_technicals(tickers: List[str], as_of: Optional[date] = None) -> Dict[str, Dict[str, Any]]:
-    """Download 90d history for watchlist to compute ATR, RVOL, and SMA flags."""
+    """Compute honest as-of ATR, SMA-200 and SPY-relative strength from history."""
     logger.info(f"Computing Deep Technicals for {len(tickers)} tickers...")
     try:
         from .price_provider import window_download
-        # We need historical data for ATR (14d) and RVOL (20d), ending at as_of.
-        data = window_download(tickers, as_of=as_of, period="6mo")
-        if data.empty: return {}
-        
+        # A six-month calendar window does not contain 200 market sessions.
+        # Fetch one year, and include SPY once so RS uses matched dates.
+        strict = os.getenv("BACKTEST_STRICT_PRICES") == "1"
+        symbols = list(dict.fromkeys([*tickers, "SPY"])) if strict else tickers
+        data = window_download(symbols, as_of=as_of,
+                               period="1y" if strict else "6mo")
+        if data is None or data.empty:
+            return {}
+
+        benchmark_close = None
+        if strict:
+            try:
+                benchmark_close = data.xs("SPY", level=1, axis=1)["Close"].dropna()
+            except (KeyError, ValueError):
+                logger.warning("No SPY price history: relative strength unavailable")
+
         tech_data = {}
         for ticker in tickers:
             try:
@@ -350,8 +362,15 @@ def compute_technicals(tickers: List[str], as_of: Optional[date] = None) -> Dict
                 # Flatten the multi-index for this ticker
                 hist.columns = hist.columns.get_level_values(0)
                 
-                if hist.empty or len(hist) < 20: continue
-                
+                if strict:
+                    hist = hist.dropna(subset=["Close", "High", "Low", "Volume"])
+                if hist.empty or len(hist) < (50 if strict else 20):
+                    continue
+                if strict and as_of is not None and hist.index[-1].date() != as_of:
+                    logger.warning("Stale technical history %s at %s (wanted %s)",
+                                   ticker, hist.index[-1], as_of)
+                    continue
+
                 close = hist["Close"]
                 high = hist["High"]
                 low = hist["Low"]
@@ -374,7 +393,8 @@ def compute_technicals(tickers: List[str], as_of: Optional[date] = None) -> Dict
                 # 3. SMA Relationship Flags
                 sma_20 = float(close.rolling(window=20).mean().iloc[-1])
                 sma_50 = float(close.rolling(window=50).mean().iloc[-1])
-                sma_200 = float(close.rolling(window=200).mean().iloc[-1]) if len(close) >= 200 else sma_50
+                sma_200 = (float(close.rolling(window=200).mean().iloc[-1])
+                           if len(close) >= 200 else (None if strict else sma_50))
                 
                 cur_price = float(close.iloc[-1])
                 
@@ -388,10 +408,29 @@ def compute_technicals(tickers: List[str], as_of: Optional[date] = None) -> Dict
                 # ADDING DEEP INSTITUTIONAL ANALYSIS
                 dist_20 = round((cur_price - sma_20)/sma_20 * 100, 1)
                 dist_50 = round((cur_price - sma_50)/sma_50 * 100, 1)
-                dist_200 = round((cur_price - sma_200)/sma_200 * 100, 1)
-                
-                # Dynamic qualitative summary with deep technical context
-                trend = "Constructive Bullish" if cur_price > sma_50 > sma_200 else "Structural Bearish"
+                dist_200 = (round((cur_price - sma_200) / sma_200 * 100, 1)
+                            if sma_200 else None)
+
+                # Price-relative-strength percentage points vs SPY over
+                # matched historical sessions; no future prices or guesswork.
+                rs_1m = rs_3m = None
+                if strict and benchmark_close is not None and not benchmark_close.empty:
+                    aligned = pd.concat([close, benchmark_close], axis=1).dropna()
+                    if len(aligned) >= 64 and aligned.index[-1].date() == close.index[-1].date():
+                        def relative_return(days):
+                            stock_return = aligned.iloc[-1, 0] / aligned.iloc[-(days + 1), 0] - 1
+                            spy_return = aligned.iloc[-1, 1] / aligned.iloc[-(days + 1), 1] - 1
+                            return round(float((stock_return - spy_return) * 100), 2)
+                        rs_1m = relative_return(21)
+                        rs_3m = relative_return(63)
+                    elif len(aligned) >= 22 and aligned.index[-1].date() == close.index[-1].date():
+                        s_ret = aligned.iloc[-1, 0] / aligned.iloc[-22, 0] - 1
+                        b_ret = aligned.iloc[-1, 1] / aligned.iloc[-22, 1] - 1
+                        rs_1m = round(float((s_ret - b_ret) * 100), 2)
+
+                # Missing 200-session average is unavailable, not SMA-50.
+                trend = ("Constructive Bullish" if sma_200 and cur_price > sma_50 > sma_200
+                         else "Structural Bearish" if sma_200 else "200d history unverified")
                 momentum = "Accelerating" if rsi > 50 and dist_20 > 0 else "Decompressing"
                 vibe = "Divergent" if (rsi > 60 and cur_price < sma_20) or (rsi < 40 and cur_price > sma_20) else "Aligned"
                 
@@ -408,7 +447,9 @@ def compute_technicals(tickers: List[str], as_of: Optional[date] = None) -> Dict
                     "SMA_20_Dist": dist_20,
                     "SMA_50_Dist": dist_50,
                     "SMA_200_Dist": dist_200,
-                    "Bull_Trend": int(cur_price > sma_50 > sma_200),
+                    "RS_1M_vs_SPY": rs_1m,
+                    "RS_3M_vs_SPY": rs_3m,
+                    "Bull_Trend": int(bool(sma_200 and cur_price > sma_50 > sma_200)),
                     "Analysis": analysis
                 }
             except: continue
@@ -422,7 +463,11 @@ def format_as_toon(watchlist: List[Dict[str, Any]], sectors: Dict[str, Any]) -> 
     if not watchlist: return "Watchlist empty."
     
     # Header with extreme density
-    cols = ["Tkr", "Price", "RSI", "RVOL_Z", "ATR_Pct", "Volat_Rank", "SMA_20_Dist", "SMA_200_Dist", "Catalyst", "Analysis"]
+    from os import getenv
+    cols = ["Tkr", "Price", "RSI", "RVOL_Z", "ATR_Pct", "Volat_Rank", "SMA_20_Dist", "SMA_200_Dist"]
+    if getenv("BACKTEST_STRICT_PRICES") == "1":
+        cols += ["RS_1M_vs_SPY", "RS_3M_vs_SPY"]
+    cols += ["Catalyst", "Analysis"]
     header = "| " + " | ".join(cols) + " |"
     divider = "| " + " | ".join(["---"] * len(cols)) + " |"
     

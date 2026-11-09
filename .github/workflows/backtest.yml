@@ -60,7 +60,8 @@ jobs:
           FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
           PYTHONPATH: ${{ github.workspace }}
           MAX_TOOL_CALLS: ${{ inputs.max_tool_calls }}
-          JITTER_MAX: "0"   # paid tier: no inter-agent pause needed
+          JITTER_MAX: "0"
+          BACKTEST_STRICT_PRICES: "1"   # paid tier: no inter-agent pause needed
         run: |
           python -m v2.main \
             --start-date "${{ inputs.start_date }}" \
@@ -68,15 +69,15 @@ jobs:
             --agents "${{ inputs.agents }}"
 
       - name: Summarize results
-        if: always()
+        if: success()
         run: python3 v2/scripts/summarize_backtest.py
 
       - name: Monte-Carlo distribution + beat-SPY analysis
-        if: always()
+        if: success()
         run: python3 v2/scripts/monte_carlo.py
 
       - name: Upload results
-        if: always()
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: backtest-results

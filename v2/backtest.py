@@ -12,6 +12,7 @@ pulling in the heavy runner.
 
 import json
 import logging
+import os
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -106,8 +107,11 @@ def run_backtest(start_iso: str, end_iso: str, agent_ids=None):
         try:
             run_all_agents(d, agent_ids=agent_ids)
         except Exception as e:
-            # Don't let one bad day (data hiccup, provider outage) abort a long
-            # run — state for completed days is already persisted. Log and go on.
+            # In strict mode, a missing mark/stop/open invalidates the whole
+            # result. Fail the GitHub job instead of publishing false returns.
+            if os.getenv("BACKTEST_STRICT_PRICES") == "1":
+                logger.exception("Backtest invalid on %s; stopping without a verdict", d)
+                raise
             failures += 1
             logger.error(f"Day {d} failed, continuing: {e}")
     if failures:
