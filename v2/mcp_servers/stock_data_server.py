@@ -6,6 +6,7 @@ Fallback: Alpha Vantage for screening (requires API key).
 """
 
 import logging
+import os
 from typing import Optional
 
 logger = logging.getLogger(__name__)
@@ -167,16 +168,20 @@ def get_technicals(ticker: str, period: str = "3mo", as_of=None) -> dict:
             "sma_20": sma_20,
             "sma_50": sma_50,
             "sma_200": sma_200,
-            "return_1m_pct": trailing_return_pct(21),
-            "return_3m_pct": trailing_return_pct(63),
-            "return_6m_pct": trailing_return_pct(126),
-            "price_asof_date": close.index[-1].strftime("%Y-%m-%d"),
             "rsi_14": rsi,
             "volume_avg_20d": volume_avg,
             "week_52_high": week_52_high,
             "week_52_low": week_52_low,
             "price_history_last_10d": price_history,
         }
+
+        if os.getenv("BACKTEST_STRICT_PRICES") == "1":
+            result.update({
+                "return_1m_pct": trailing_return_pct(21),
+                "return_3m_pct": trailing_return_pct(63),
+                "return_6m_pct": trailing_return_pct(126),
+                "price_asof_date": close.index[-1].strftime("%Y-%m-%d"),
+            })
 
         # Trend signals
         signals = []
