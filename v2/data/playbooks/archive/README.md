@@ -29,12 +29,20 @@ version, restore from this file (or the git tag below).
 
 ### Restore points
 
-- This file: `v2/data/playbooks/archive/claude_aggressive_PROVEN_v1.md`
-- Git tag: `proven-aggressive-v1` (marks the commit with the validated playbook +
-  all supporting code). Restore with:
-  ```
-  git checkout proven-aggressive-v1 -- v2/data/playbooks/claude_aggressive.md
-  ```
+Primary (always works — this frozen copy is committed on `main`):
+```
+cp v2/data/playbooks/archive/claude_aggressive_PROVEN_v1.md \
+   v2/data/playbooks/claude_aggressive.md
+```
+
+Optional named tag `proven-aggressive-v1` marks the exact commit with the
+validated playbook + supporting code. It could not be pushed from the build
+environment (proxy blocks tag refs); to publish it from a normal clone:
+```
+git tag -a proven-aggressive-v1 8044be2 -m "Validated claude_aggressive baseline"
+git push origin proven-aggressive-v1
+```
+Then restore with: `git checkout proven-aggressive-v1 -- v2/data/playbooks/claude_aggressive.md`
 
 **Do not edit the files in this archive.** New ideas go into new variant playbooks
 (e.g. `claude_robust.md`, `claude_return.md`), never into the baseline or these
