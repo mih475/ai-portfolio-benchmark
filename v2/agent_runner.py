@@ -44,7 +44,7 @@ from .portfolio_simulator import PortfolioSimulator
 logger = logging.getLogger(__name__)
 
 # Force propose_trades as a tool that MUST be called to end the turn.
-def get_trade_tool() -> dict:
+def get_trade_tool(agent_id: str | None = None) -> dict:
     # Load schema
     schema_path = Path(__file__).parent / "schemas" / "propose_trades.json"
     with open(schema_path) as f:
@@ -53,7 +53,18 @@ def get_trade_tool() -> dict:
     # Gemini/Google SDK is VERY strict: absolutely NO "$schema" key allowed in parameters
     if "$schema" in schema:
         del schema["$schema"]
-        
+
+    # Only ChatGPT-aggressive gets a corrected SELL envelope. The generic
+    # schema capped *all* orders at 25%, even though the existing simulator
+    # supports 100% SELLs. Do not change Claude's tool contract or paper flow.
+    if agent_id == "chatgpt_aggressive":
+        allocation = schema["properties"]["trades"]["items"]["properties"]["allocation_pct"]
+        allocation["maximum"] = 100
+        allocation["description"] = (
+            "BUY: 5-25% of total portfolio (simulator enforces tighter limits). "
+            "SELL: 5-100% of held position; 100 means close the position."
+        )
+
     return {
         "name": "propose_trades",
         "description": "Submit your final daily trading decisions. You MUST call this tool when you are done analyzing.",
@@ -198,7 +209,7 @@ def run_agent(agent_id: str, snapshot: dict, simulator: PortfolioSimulator,
             if "parameters" in t and "$schema" in t["parameters"]:
                 del t["parameters"]["$schema"]
                 
-        tools.append(get_trade_tool())
+        tools.append(get_trade_tool(agent_id))
 
         # Build prompts
         sys_prompt = build_system_prompt(agent, playbook)
