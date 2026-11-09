@@ -341,6 +341,65 @@ def t_strict_backtest_rejects_invalid_close():
             os.environ["BACKTEST_STRICT_PRICES"] = old
 
 
+@test
+def t_historical_snapshot_history_survives_daily_rebuilds():
+    import os
+    import json
+    d = Path(tempfile.mkdtemp())
+    rules = make_rules()
+    old = os.environ.get("BACKTEST_STRICT_PRICES")
+    os.environ["BACKTEST_STRICT_PRICES"] = "1"
+    try:
+        one = PortfolioSimulator("agent", 10000.0, rules, d)
+        one.mark_to_market({}, "2022-06-13")
+        one.save_state()
+        one.save_snapshot_history()
+
+        two = PortfolioSimulator("agent", 10000.0, rules, d)
+        two.mark_to_market({}, "2022-06-14")
+        two.save_state()
+        two.save_snapshot_history()
+        two.save_snapshot_history()  # idempotent within the same trading day
+
+        records = json.loads((d / "agent_history.json").read_text())
+        assert [s["date"] for s in records] == ["2022-06-13", "2022-06-14"], records
+        assert len(records) == len(two.daily_returns) == 2
+
+        three = PortfolioSimulator("agent", 10000.0, rules, d)
+        three.mark_to_market({}, "2022-06-15")
+        three.save_state()
+        three.save_snapshot_history()
+        records = json.loads((d / "agent_history.json").read_text())
+        assert len(records) == len(three.daily_returns) == 3, records
+    finally:
+        if old is None:
+            os.environ.pop("BACKTEST_STRICT_PRICES", None)
+        else:
+            os.environ["BACKTEST_STRICT_PRICES"] = old
+
+
+@test
+def t_strict_history_fails_closed_if_existing_json_corrupt():
+    import os
+    d = Path(tempfile.mkdtemp())
+    (d / "agent_history.json").write_text("{corrupt")
+    sim = PortfolioSimulator("agent", 10000.0, make_rules(), d)
+    sim.mark_to_market({}, "2022-06-13")
+    old = os.environ.get("BACKTEST_STRICT_PRICES")
+    os.environ["BACKTEST_STRICT_PRICES"] = "1"
+    try:
+        try:
+            sim.save_snapshot_history()
+            assert False, "corrupt historical state must not be silently reset"
+        except ValueError:
+            pass
+    finally:
+        if old is None:
+            os.environ.pop("BACKTEST_STRICT_PRICES", None)
+        else:
+            os.environ["BACKTEST_STRICT_PRICES"] = old
+
+
 # ─────────────────────────────────────────────────────────────────────────
 def main():
     passed = failed = 0

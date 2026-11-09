@@ -26,6 +26,7 @@ from pathlib import Path
 DEFAULT_HORIZON = 252   # ~1 trading year
 DEFAULT_SIMS = 5000
 CAPITAL = 10000.0
+MIN_REPORT_DAYS = 60  # shorter diagnostic runs cannot support annualized claims
 
 
 def _percentile(sorted_vals, p):
@@ -167,10 +168,15 @@ def render(rows, vs_rows=None, horizon=DEFAULT_HORIZON) -> str:
             "|---|---|---|---|",
         ]
         for r in vs_rows:
-            lines.append(
-                f"| {r['agent']} | {r['prob_beat']:.0f}% | {r['margin_p50']:+.1f}% "
-                f"| {r['margin_p5']:+.1f}% … {r['margin_p95']:+.1f}% |"
-            )
+            if r["n_days"] < MIN_REPORT_DAYS:
+                lines.append(
+                    f"| {r['agent']} | — | — | Insufficient sample ({r['n_days']} paired days) |"
+                )
+            else:
+                lines.append(
+                    f"| {r['agent']} | {r['prob_beat']:.0f}% | {r['margin_p50']:+.1f}% "
+                    f"| {r['margin_p5']:+.1f}% … {r['margin_p95']:+.1f}% |"
+                )
         lines.append("")
 
     lines += [
@@ -184,17 +190,27 @@ def render(rows, vs_rows=None, horizon=DEFAULT_HORIZON) -> str:
         "|---|---|---|---|---|---|",
     ]
     for r in rows:
-        lines.append(
-            f"| {r['agent']} | {r['n_days']} | {r['ret_p50']:+.1f}% "
-            f"| {r['ret_p5']:+.1f}% … {r['ret_p95']:+.1f}% "
-            f"| ${r['usd_p50']:,.0f} (${r['usd_p5']:,.0f}–${r['usd_p95']:,.0f}) "
-            f"| {r['prob_loss']:.0f}% |"
-        )
+        if r["n_days"] < MIN_REPORT_DAYS:
+            lines.append(
+                f"| {r['agent']} | {r['n_days']} | — | Insufficient sample "
+                f"| — | — |"
+            )
+        else:
+            lines.append(
+                f"| {r['agent']} | {r['n_days']} | {r['ret_p50']:+.1f}% "
+                f"| {r['ret_p5']:+.1f}% … {r['ret_p95']:+.1f}% "
+                f"| ${r['usd_p50']:,.0f} (${r['usd_p5']:,.0f}–${r['usd_p95']:,.0f}) "
+                f"| {r['prob_loss']:.0f}% |"
+            )
     if not rows:
         lines.append("| — | _no daily-return data_ |  |  |  |  |")
-    if rows and min(r["n_days"] for r in rows) < 60:
-        lines += ["", "> ⚠ Fewer than ~60 sample days: bands are very wide and "
-                      "unreliable. Treat as illustrative only."]
+    too_short = (any(r["n_days"] < MIN_REPORT_DAYS for r in rows)
+                 or any(r["n_days"] < MIN_REPORT_DAYS for r in (vs_rows or [])))
+    if too_short:
+        lines += ["", "> ⚠ **Diagnostic run:** fewer than 60 observed trading days "
+                      "for at least one row. Annualized bootstrap results and "
+                      "beat-SPY probabilities are **suppressed**, not meaningful. "
+                      "Use the actual window returns from summary.md instead."]
     return "\n".join(lines)
 
 
