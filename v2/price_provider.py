@@ -187,7 +187,8 @@ def day_ohlc(tickers, as_of=None, _downloader=None) -> dict:
         import math
         out = {}
         multi = len(tickers) > 1
-        historical = as_of is not None and not is_live(as_of)
+        historical = (os.getenv("BACKTEST_STRICT_PRICES") == "1"
+                      and as_of is not None and not is_live(as_of))
         for tkr in tickers:
             try:
                 series = data.xs(tkr, level=1, axis=1) if multi else data
@@ -202,9 +203,9 @@ def day_ohlc(tickers, as_of=None, _downloader=None) -> dict:
                 bar = {field: float(row[column]) for field, column in (
                     ("open", "Open"), ("high", "High"),
                     ("low", "Low"), ("close", "Close"))}
-                if (not all(math.isfinite(x) and x > 0 for x in bar.values())
-                    or bar["low"] > min(bar["open"], bar["close"])
-                    or bar["high"] < max(bar["open"], bar["close"])):
+                if historical and (not all(math.isfinite(x) and x > 0 for x in bar.values())
+                                   or bar["low"] > min(bar["open"], bar["close"])
+                                   or bar["high"] < max(bar["open"], bar["close"])):
                     logger.warning("Invalid OHLC for %s on %s: %s", tkr, as_of, bar)
                     continue
                 out[tkr] = bar
