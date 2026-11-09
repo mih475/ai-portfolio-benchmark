@@ -75,6 +75,35 @@ def t_unknown_param_dropped():
     assert r["ok"] and "parallel_tool_calls" not in r, r
 
 
+@test
+def t_openai_new_token_parameter_chosen_before_request():
+    # Isolated AST extraction, so the helper cannot rely on module-level imports.
+    from types import SimpleNamespace
+    tree = ast.parse(SRC.read_text())
+    fn = next(node for node in tree.body
+              if isinstance(node, ast.FunctionDef)
+              and node.name == "_openai_token_kwargs")
+    local_ns = {}
+    exec(compile(ast.Module(body=[fn], type_ignores=[]), "<helper>", "exec"), local_ns)
+    choose = local_ns["_openai_token_kwargs"]
+
+    chatgpt = SimpleNamespace(api_key_env="OPENAI_API_KEY",
+                              model_id="gpt-6-luna", max_tokens=4096)
+    assert choose(chatgpt) == {"max_completion_tokens": 4096}
+
+    # Third-party OpenAI-compatible models must retain their old contract.
+    deepseek = SimpleNamespace(api_key_env="DEEPSEEK_API_KEY",
+                               model_id="deepseek-chat", max_tokens=2048)
+    assert choose(deepseek) == {"max_tokens": 2048}
+    old_openai = SimpleNamespace(api_key_env="OPENAI_API_KEY",
+                                 model_id="gpt-4.1", max_tokens=2048)
+    assert choose(old_openai) == {"max_tokens": 2048}
+
+    # Verify normal, tool-loop, and final-forced-propose calls all use helper.
+    source = SRC.read_text()
+    assert source.count("**_openai_token_kwargs(self.provider),") == 3
+
+
 def main():
     passed = failed = 0
     for fn in TESTS:
