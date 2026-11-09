@@ -168,8 +168,8 @@ def day_ohlc(tickers, as_of=None, _downloader=None) -> dict:
     """Return {ticker: {open, high, low, close}} for the bar on `as_of`.
 
     Live: today's (latest) bar. Historical: the bar on `as_of`. Non-trading
-    `as_of` dates resolve to the last available bar in the small surrounding
-    window. Returns {} for no tickers or on failure (never raises).
+    `as_of` dates require an exact-session bar (no prior-session substitution).
+    Returns {} for no tickers or on failure (never raises).
     """
     tickers = list(tickers)
     if not tickers:
@@ -181,22 +181,35 @@ def day_ohlc(tickers, as_of=None, _downloader=None) -> dict:
         if data is None or getattr(data, "empty", True):
             return {}
 
+        # Historical execution requires the requested session's actual bar, not
+        # simply the most recent row in the lookback window. Using Friday's bar
+        # for Monday would manufacture an opening fill and an incorrect stop.
+        import math
         out = {}
         multi = len(tickers) > 1
+        historical = as_of is not None and not is_live(as_of)
         for tkr in tickers:
             try:
-                if multi:
-                    row = data.xs(tkr, level=1, axis=1).iloc[-1]
+                series = data.xs(tkr, level=1, axis=1) if multi else data
+                if historical:
+                    candidates = series.loc[series.index.date == as_of]
+                    if candidates.empty:
+                        logger.warning("No exact-session OHLC for %s on %s", tkr, as_of)
+                        continue
+                    row = candidates.iloc[-1]
                 else:
-                    row = data.iloc[-1]
-                out[tkr] = {
-                    "open": float(row["Open"]),
-                    "high": float(row["High"]),
-                    "low": float(row["Low"]),
-                    "close": float(row["Close"]),
-                }
-            except Exception:
-                continue
+                    row = series.iloc[-1]
+                bar = {field: float(row[column]) for field, column in (
+                    ("open", "Open"), ("high", "High"),
+                    ("low", "Low"), ("close", "Close"))}
+                if (not all(math.isfinite(x) and x > 0 for x in bar.values())
+                    or bar["low"] > min(bar["open"], bar["close"])
+                    or bar["high"] < max(bar["open"], bar["close"])):
+                    logger.warning("Invalid OHLC for %s on %s: %s", tkr, as_of, bar)
+                    continue
+                out[tkr] = bar
+            except Exception as exc:
+                logger.warning("Could not parse OHLC for %s on %s: %s", tkr, as_of, exc)
         return out
     except Exception as e:
         logger.error(f"day_ohlc failed: {e}")
