@@ -152,8 +152,11 @@ def t_live_window_never_cached(tmp=None):
 def t_historical_ohlc_requires_exact_session_not_last_available():
     # A minimal dataframe substitute: no pandas installation or web access.
     import types
+    import os
     original_pandas = sys.modules.get("pandas")
     original_window = pp.window_download
+    old_strict = os.environ.get("BACKTEST_STRICT_PRICES")
+    os.environ["BACKTEST_STRICT_PRICES"] = "1"
 
     class Dates(list):
         def __eq__(self, other):
@@ -188,6 +191,10 @@ def t_historical_ohlc_requires_exact_session_not_last_available():
         assert pp.day_ohlc(["ABC"], as_of=old_day) == {}
     finally:
         pp.window_download = original_window
+        if old_strict is None:
+            os.environ.pop("BACKTEST_STRICT_PRICES", None)
+        else:
+            os.environ["BACKTEST_STRICT_PRICES"] = old_strict
         if original_pandas is None:
             sys.modules.pop("pandas", None)
         else:
