@@ -60,7 +60,8 @@ jobs:
           FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
           PYTHONPATH: ${{ github.workspace }}
           MAX_TOOL_CALLS: ${{ inputs.max_tool_calls }}
-          JITTER_MAX: "0"   # paid tier: no inter-agent pause needed
+          JITTER_MAX: "0"
+          BACKTEST_STRICT_PRICES: "1"   # paid tier: no inter-agent pause needed
         run: |
           python -m v2.main \
             --start-date "${{ inputs.start_date }}" \
