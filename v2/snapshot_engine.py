@@ -463,8 +463,9 @@ def format_as_toon(watchlist: List[Dict[str, Any]], sectors: Dict[str, Any]) -> 
     if not watchlist: return "Watchlist empty."
     
     # Header with extreme density
+    from os import getenv
     cols = ["Tkr", "Price", "RSI", "RVOL_Z", "ATR_Pct", "Volat_Rank", "SMA_20_Dist", "SMA_200_Dist"]
-    if os.getenv("BACKTEST_STRICT_PRICES") == "1":
+    if getenv("BACKTEST_STRICT_PRICES") == "1":
         cols += ["RS_1M_vs_SPY", "RS_3M_vs_SPY"]
     cols += ["Catalyst", "Analysis"]
     header = "| " + " | ".join(cols) + " |"
