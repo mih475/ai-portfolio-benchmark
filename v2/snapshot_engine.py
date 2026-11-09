@@ -341,16 +341,19 @@ def compute_technicals(tickers: List[str], as_of: Optional[date] = None) -> Dict
         from .price_provider import window_download
         # A six-month calendar window does not contain 200 market sessions.
         # Fetch one year, and include SPY once so RS uses matched dates.
-        symbols = list(dict.fromkeys([*tickers, "SPY"]))
-        data = window_download(symbols, as_of=as_of, period="1y")
+        strict = os.getenv("BACKTEST_STRICT_PRICES") == "1"
+        symbols = list(dict.fromkeys([*tickers, "SPY"])) if strict else tickers
+        data = window_download(symbols, as_of=as_of,
+                               period="1y" if strict else "6mo")
         if data is None or data.empty:
             return {}
 
         benchmark_close = None
-        try:
-            benchmark_close = data.xs("SPY", level=1, axis=1)["Close"].dropna()
-        except (KeyError, ValueError):
-            logger.warning("No SPY price history: relative strength unavailable")
+        if strict:
+            try:
+                benchmark_close = data.xs("SPY", level=1, axis=1)["Close"].dropna()
+            except (KeyError, ValueError):
+                logger.warning("No SPY price history: relative strength unavailable")
 
         tech_data = {}
         for ticker in tickers:
@@ -359,10 +362,11 @@ def compute_technicals(tickers: List[str], as_of: Optional[date] = None) -> Dict
                 # Flatten the multi-index for this ticker
                 hist.columns = hist.columns.get_level_values(0)
                 
-                hist = hist.dropna(subset=["Close", "High", "Low", "Volume"])
-                if hist.empty or len(hist) < 50:
+                if strict:
+                    hist = hist.dropna(subset=["Close", "High", "Low", "Volume"])
+                if hist.empty or len(hist) < (50 if strict else 20):
                     continue
-                if as_of is not None and hist.index[-1].date() != as_of:
+                if strict and as_of is not None and hist.index[-1].date() != as_of:
                     logger.warning("Stale technical history %s at %s (wanted %s)",
                                    ticker, hist.index[-1], as_of)
                     continue
@@ -390,7 +394,7 @@ def compute_technicals(tickers: List[str], as_of: Optional[date] = None) -> Dict
                 sma_20 = float(close.rolling(window=20).mean().iloc[-1])
                 sma_50 = float(close.rolling(window=50).mean().iloc[-1])
                 sma_200 = (float(close.rolling(window=200).mean().iloc[-1])
-                           if len(close) >= 200 else None)
+                           if len(close) >= 200 else (None if strict else sma_50))
                 
                 cur_price = float(close.iloc[-1])
                 
@@ -410,7 +414,7 @@ def compute_technicals(tickers: List[str], as_of: Optional[date] = None) -> Dict
                 # Price-relative-strength percentage points vs SPY over
                 # matched historical sessions; no future prices or guesswork.
                 rs_1m = rs_3m = None
-                if benchmark_close is not None and not benchmark_close.empty:
+                if strict and benchmark_close is not None and not benchmark_close.empty:
                     aligned = pd.concat([close, benchmark_close], axis=1).dropna()
                     if len(aligned) >= 64 and aligned.index[-1].date() == close.index[-1].date():
                         def relative_return(days):
@@ -459,7 +463,10 @@ def format_as_toon(watchlist: List[Dict[str, Any]], sectors: Dict[str, Any]) -> 
     if not watchlist: return "Watchlist empty."
     
     # Header with extreme density
-    cols = ["Tkr", "Price", "RSI", "RVOL_Z", "ATR_Pct", "Volat_Rank", "SMA_20_Dist", "SMA_200_Dist", "RS_1M_vs_SPY", "RS_3M_vs_SPY", "Catalyst", "Analysis"]
+    cols = ["Tkr", "Price", "RSI", "RVOL_Z", "ATR_Pct", "Volat_Rank", "SMA_20_Dist", "SMA_200_Dist"]
+    if os.getenv("BACKTEST_STRICT_PRICES") == "1":
+        cols += ["RS_1M_vs_SPY", "RS_3M_vs_SPY"]
+    cols += ["Catalyst", "Analysis"]
     header = "| " + " | ".join(cols) + " |"
     divider = "| " + " | ".join(["---"] * len(cols)) + " |"
     
