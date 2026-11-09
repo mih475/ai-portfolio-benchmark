@@ -82,6 +82,31 @@ def t_vs_spy_coinflip_when_identical():
     assert abs(v["margin_p50"]) < 1e-6, v      # same days => identical wealth => 0 margin
 
 
+@test
+def t_short_diagnostic_suppresses_annualized_confidence():
+    # A five-day bear week must not produce a credible-looking 100% beat rate.
+    raw = mc.vs_spy_stats([0.0] * 5, [-0.02] * 5,
+                          horizon=252, n_sims=100, seed=1)
+    assert raw["prob_beat"] == 100.0
+    raw["agent"] = "chatgpt_aggressive"
+    absolute = mc.distribution_stats([0.0] * 5, horizon=252, n_sims=100)
+    absolute["agent"] = "chatgpt_aggressive"
+    rendered = mc.render([absolute], [raw])
+    assert "Insufficient sample" in rendered, rendered
+    assert "suppressed" in rendered, rendered
+    assert "100%" not in rendered, rendered
+
+
+@test
+def t_long_sample_still_reports_confidence():
+    raw = mc.vs_spy_stats([0.003] * 80, [0.001] * 80,
+                          horizon=252, n_sims=100, seed=1)
+    raw["agent"] = "chatgpt_aggressive"
+    text = mc.render([], [raw])
+    assert "100%" in text, text
+    assert "Insufficient sample" not in text, text
+
+
 def main():
     passed = failed = 0
     for fn in TESTS:
