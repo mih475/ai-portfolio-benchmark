@@ -95,6 +95,7 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}
           MAX_TOOL_CALLS: ${{ inputs.max_tool_calls }}
           JITTER_MAX: "0"
+          BACKTEST_STRICT_PRICES: "1"
         run: |
           python -m v2.main \
             --start-date "${{ matrix.q.start }}" \
