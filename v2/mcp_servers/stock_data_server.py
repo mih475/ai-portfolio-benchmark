@@ -141,7 +141,14 @@ def get_technicals(ticker: str, period: str = "3mo", as_of=None) -> dict:
         week_52_high = round(float(hist_1y["High"].max()), 2) if not hist_1y.empty else None
         week_52_low = round(float(hist_1y["Low"].min()), 2) if not hist_1y.empty else None
 
-        # Last 10 days of price history for context
+        # Return summaries are computed in Python rather than consuming more
+        # model tokens and tool calls to reconstruct momentum from ten bars.
+        def trailing_return_pct(sessions):
+            if len(close) <= sessions or float(close.iloc[-(sessions + 1)]) <= 0:
+                return None
+            return round(float((close.iloc[-1] / close.iloc[-(sessions + 1)] - 1) * 100), 2)
+
+        # Last ten bars are an output-size choice, not the data download limit.
         recent = hist.tail(10)
         price_history = []
         for idx, row in recent.iterrows():
@@ -160,6 +167,10 @@ def get_technicals(ticker: str, period: str = "3mo", as_of=None) -> dict:
             "sma_20": sma_20,
             "sma_50": sma_50,
             "sma_200": sma_200,
+            "return_1m_pct": trailing_return_pct(21),
+            "return_3m_pct": trailing_return_pct(63),
+            "return_6m_pct": trailing_return_pct(126),
+            "price_asof_date": close.index[-1].strftime("%Y-%m-%d"),
             "rsi_14": rsi,
             "volume_avg_20d": volume_avg,
             "week_52_high": week_52_high,
