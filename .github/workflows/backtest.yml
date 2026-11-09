@@ -69,15 +69,15 @@ jobs:
             --agents "${{ inputs.agents }}"
 
       - name: Summarize results
-        if: always()
+        if: success()
         run: python3 v2/scripts/summarize_backtest.py
 
       - name: Monte-Carlo distribution + beat-SPY analysis
-        if: always()
+        if: success()
         run: python3 v2/scripts/monte_carlo.py
 
       - name: Upload results
-        if: always()
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: backtest-results
