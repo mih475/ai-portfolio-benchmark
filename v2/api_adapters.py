@@ -64,6 +64,21 @@ def _safe_create(fn, **kwargs):
             raise
     return fn(**kwargs)
 
+def _openai_token_kwargs(provider):
+    """Use the native completion-token parameter for OpenAI reasoning models.
+
+    The old adapter sent max_tokens on every request, relying on _safe_create to
+    recover from a 400 by renaming it. That compatibility retry is per-request,
+    so even a healthy multi-day backtest sent repeated avoidable bad requests.
+    Do not change OpenAI-compatible third-party providers (e.g. DeepSeek).
+    """
+    model_id = (provider.model_id or "").lower()
+    if (provider.api_key_env == "OPENAI_API_KEY"
+            and model_id.startswith(("gpt-5", "gpt-6"))):
+        return {"max_completion_tokens": provider.max_tokens}
+    return {"max_tokens": provider.max_tokens}
+
+
 def retry_with_backoff(func: Callable, max_retries: int = 5, base_delay: float = 2.0):
     """Generic 2026-style exponential backoff wrapper."""
     def wrapper(*args, **kwargs):
@@ -166,7 +181,7 @@ class UnifiedLLMClient:
                     model=self.provider.model_id,
                     messages=messages,
                     temperature=self.provider.temperature,
-                    max_tokens=self.provider.max_tokens,
+                    **_openai_token_kwargs(self.provider),
                     reasoning_effort="none",  # reasoning models need this for chat+tools; shim drops it elsewhere
                 )
             response = _call_oai()
@@ -182,7 +197,7 @@ class UnifiedLLMClient:
                     messages=messages,
                     tools=formatted_tools,
                     temperature=self.provider.temperature,
-                    max_tokens=self.provider.max_tokens,
+                    **_openai_token_kwargs(self.provider),
                     parallel_tool_calls=self.provider.parallel_tool_calls,
                     reasoning_effort="none",  # reasoning models need this for chat+tools; shim drops it elsewhere
                 )
@@ -239,7 +254,7 @@ class UnifiedLLMClient:
                 tools=formatted,
                 tool_choice={"type": "function", "function": {"name": "propose_trades"}},
                 temperature=self.provider.temperature,
-                max_tokens=self.provider.max_tokens,
+                **_openai_token_kwargs(self.provider),
                 reasoning_effort="none",
             )
             tc = resp.choices[0].message.tool_calls
