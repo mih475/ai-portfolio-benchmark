@@ -682,11 +682,40 @@ class PortfolioSimulator:
         logger.info(f"[{self.agent_id}] State loaded: ${self.cash:.2f} cash, {len(self.positions)} positions")
 
     def save_snapshot_history(self):
-        """Save all daily snapshots to a separate file for performance analysis."""
+        """Persist day-by-day portfolio history rather than overwriting it.
+
+        In strict historical backtests, the simulator is reconstructed daily.
+        Its in-memory snapshots therefore contain only the current date. Merge
+        the new snapshots into the existing on-disk history by trading date,
+        preserving previous days and replacing duplicate dates on rerun.
+
+        The existing live-paper history path is deliberately unchanged.
+        """
         filepath = self.data_dir / f"{self.agent_id}_history.json"
-        with open(filepath, "w") as f:
-            json.dump([asdict(s) if hasattr(s, '__dataclass_fields__') else s
-                       for s in self.daily_snapshots], f, indent=2, default=str)
+        current = [asdict(s) if hasattr(s, '__dataclass_fields__') else s
+                   for s in self.daily_snapshots]
+
+        if os.getenv("BACKTEST_STRICT_PRICES") != "1":
+            with open(filepath, "w") as f:
+                json.dump(current, f, indent=2, default=str)
+            return
+
+        previous = json.loads(filepath.read_text()) if filepath.exists() else []
+        if not isinstance(previous, list):
+            raise ValueError(f"Invalid historical portfolio history: {filepath}")
+        merged = {}
+        for item in [*previous, *current]:
+            if not isinstance(item, dict) or not isinstance(item.get("date"), str):
+                raise ValueError(f"Malformed history entry in {filepath}: {item!r}")
+            merged[item["date"]] = item
+        ordered = [merged[k] for k in sorted(merged)]
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+        # Atomic replacement avoids corrupting history if a job is interrupted
+        # while serializing its most recent trading day.
+        temporary = filepath.with_suffix(".json.tmp")
+        with open(temporary, "w") as f:
+            json.dump(ordered, f, indent=2, default=str)
+        temporary.replace(filepath)
 
     def get_portfolio_summary(self) -> dict:
         """Get a human-readable summary of current portfolio state (for prompts)."""
