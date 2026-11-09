@@ -57,7 +57,7 @@ Example: at an 8% stop in RISK-ON, 0.8% / 8% = **10%** portfolio allocation, bef
 Set a genuine stop on **every BUY**. Prefer a static take-profit at >=**2.5R** (for an 8% stop, +20% target) when a reasonable target exists. The current simulator executes whole-position stop/target exits and does not expose a stop-adjustment action. Therefore:
 - **Never claim to trail, raise, or move a stop**; that capability is not available in the current trade tool.
 - On a thesis break, failed trend, material negative development, or deterioration of market regime, prioritize reducing existing exposure over adding new risk. Do not average down or replace a failed thesis with hope.
-- A new SELL request may only be **partial** with the current tool contract (schema says 5–25% allocation, while its description misleadingly suggests 100%). Submit only schema-compliant SELLs; recheck positions after actual fills and continue reductions on later sessions. **Do not claim full liquidation** unless the transaction record confirms it.
+- For **ChatGPT-aggressive**, the trade tool exposes SELL allocation of **5–100% of the held position** (100% requests a full close). The simulator already supports this. BUY requests remain subject to the 5–25% system cap and the tighter sizing rules above. Recheck positions after actual fills; **do not claim liquidation** until the transaction record confirms it.
 - Automatic stop/TP exits are distinct from discretionary SELL requests. A proposal is not a fill; account for T+1 and possible gaps.
 - If a needed emergency exit cannot be represented by the schema, **flag that execution limitation clearly**; do not assume the playbook can enforce an immediate exit.
 
@@ -68,7 +68,7 @@ Operate only on information available by the current simulation date. Use no for
 
 Do not place a BUY with incomplete regime/ATR/price confirmation. If critical data is missing for an **existing** position, explicitly report which ticker/date/field is missing and treat P&L and exit status as **unverified**; a missing price must not be interpreted as a safe position.
 
-Recognize the known simulator limits until fixed and revalidated: stops are currently checked before T+1 opening orders (entry-day stop coverage can be missed); stale marks can survive a missing close; missing-price orders can be cancelled without a complete audit record; and SELL schema/backend behavior cannot represent a one-shot discretionary full exit. **Prompt rules cannot repair these engine bugs.**
+Recognize the known simulator limits until fixed and revalidated: stops are currently checked before T+1 opening orders (entry-day stop coverage can be missed); stale marks can survive a missing close; missing-price orders can be cancelled without a complete audit record; and the generic trade tool previously limited SELL allocation to 25% (corrected for ChatGPT-aggressive in this experimental implementation). **Prompt rules cannot repair engine bugs.**
 
 ## 6. EACH DAILY DECISION — REQUIRED AUDIT
 Always end by calling `propose_trades`. An empty `trades: []` is a valid, often superior decision; do not force daily transactions.
