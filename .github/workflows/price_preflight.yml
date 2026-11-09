@@ -28,7 +28,7 @@ jobs:
           python-version: '3.11'
           cache: 'pip'
       - name: Install price dependencies (no model packages required)
-        run: pip install yfinance pandas numpy
+        run: pip install yfinance pandas numpy python-dotenv
       - name: Verify historical bars without an LLM
         env:
           PYTHONPATH: ${{ github.workspace }}
