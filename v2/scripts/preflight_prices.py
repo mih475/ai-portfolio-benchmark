@@ -45,7 +45,25 @@ def main():
         if not math.isfinite(float(close.iloc[-1])) or float(close.iloc[-1]) <= 0:
             raise SystemExit(f"FAIL: invalid historical price for {ticker}")
         print(f"{ticker}: {len(close)} historical sessions; 200d SMA available={len(close)>=200}")
-    print("PASS: exact session prices and one-year history; no LLM API calls")
+    # Check the new backtest-only momentum feature against real SPY-aligned data.
+    # Import here so the simple OHLC parser remains independently testable.
+    from v2.snapshot_engine import compute_technicals
+    candidates = [t for t in tickers if t != "SPY"]
+    if candidates:
+        technicals = compute_technicals(candidates, as_of=as_of)
+        for ticker in candidates:
+            row = technicals.get(ticker)
+            if row is None:
+                raise SystemExit(f"FAIL: no calculated technicals for {ticker}")
+            for field in ("ATR_Pct", "SMA_200_Dist",
+                          "RS_1M_vs_SPY", "RS_3M_vs_SPY"):
+                if row.get(field) is None:
+                    raise SystemExit(f"FAIL: {ticker} missing {field}")
+            print(f"{ticker}: SMA200 distance={row['SMA_200_Dist']}%, "
+                  f"RS1M={row['RS_1M_vs_SPY']}pp, "
+                  f"RS3M={row['RS_3M_vs_SPY']}pp")
+
+    print("PASS: exact-session prices, full history and SPY-relative momentum; no LLM API calls")
 
 
 if __name__ == "__main__":
