@@ -15,6 +15,8 @@ after trade proposal. Code is Law.
 
 import json
 import logging
+import math
+import os
 from dataclasses import dataclass, field, asdict
 from datetime import date, datetime
 from enum import Enum
@@ -520,6 +522,16 @@ class PortfolioSimulator:
         Returns:
             DailySnapshot with end-of-day portfolio state.
         """
+        # Historical audits must never silently reuse yesterday's mark or
+        # compute a fictional return from missing/invalid close prices.
+        if os.getenv("BACKTEST_STRICT_PRICES") == "1":
+            missing = [t for t in self.positions
+                       if t not in close_prices
+                       or not isinstance(close_prices[t], (float, int))
+                       or not math.isfinite(close_prices[t])
+                       or close_prices[t] <= 0]
+            if missing:
+                raise ValueError(f"Missing/invalid exact close on {today} for {missing}")
         for ticker, pos in self.positions.items():
             if ticker in close_prices:
                 pos.update_price(close_prices[ticker])
