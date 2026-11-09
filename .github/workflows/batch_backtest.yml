@@ -102,10 +102,10 @@ jobs:
             --end-date "${{ matrix.q.end }}" \
             --agents "${{ inputs.agents }}"
       - name: Summarize quarter
-        if: always()
+        if: success()
         run: python3 v2/scripts/summarize_backtest.py
       - name: Upload quarter artifact
-        if: always()
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: batch-${{ matrix.q.name }}
@@ -116,7 +116,7 @@ jobs:
 
   aggregate:
     needs: quarter
-    if: always()
+    if: success()
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
