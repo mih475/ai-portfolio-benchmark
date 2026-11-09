@@ -148,6 +148,52 @@ def t_live_window_never_cached(tmp=None):
         pp.CACHE_DIR = orig
 
 
+@test
+def t_historical_ohlc_requires_exact_session_not_last_available():
+    # A minimal dataframe substitute: no pandas installation or web access.
+    import types
+    original_pandas = sys.modules.get("pandas")
+    original_window = pp.window_download
+
+    class Dates(list):
+        def __eq__(self, other):
+            return [x == other for x in self]
+
+    class Frame:
+        def __init__(self, rows):
+            self.rows = rows
+            self.index = types.SimpleNamespace(
+                date=Dates([d for d, _ in rows]))
+            self.empty = not bool(rows)
+            self.loc = self
+            self.iloc = self
+        def __getitem__(self, key):
+            if isinstance(key, list):
+                return Frame([row for row, keep in zip(self.rows, key) if keep])
+            if isinstance(key, int):
+                return self.rows[key][1]
+            raise KeyError(key)
+
+    old_day = date(2022, 6, 1)
+    frame = Frame([(old_day, {"Open": 10.0, "High": 10.5,
+                              "Low": 9.5, "Close": 10.2})])
+    sys.modules["pandas"] = types.ModuleType("pandas")
+    pp.window_download = lambda *a, **kw: frame
+    try:
+        assert pp.day_ohlc(["ABC"], as_of=date(2022, 6, 2)) == {}
+        good = pp.day_ohlc(["ABC"], as_of=old_day)
+        assert good["ABC"]["open"] == 10.0, good
+        # Malformed bars must not manufacture executable prices.
+        frame.rows[0][1]["High"] = 8.0
+        assert pp.day_ohlc(["ABC"], as_of=old_day) == {}
+    finally:
+        pp.window_download = original_window
+        if original_pandas is None:
+            sys.modules.pop("pandas", None)
+        else:
+            sys.modules["pandas"] = original_pandas
+
+
 def main():
     passed = failed = 0
     for fn in TESTS:
