@@ -168,7 +168,8 @@ def day_ohlc(tickers, as_of=None, _downloader=None) -> dict:
     """Return {ticker: {open, high, low, close}} for the bar on `as_of`.
 
     Live: today's (latest) bar. Historical: the bar on `as_of`. Non-trading
-    `as_of` dates require an exact-session bar (no prior-session substitution).
+    In BACKTEST_STRICT_PRICES mode historical `as_of` requires an exact-session
+    bar (no prior-session substitution); live/paper retains its prior selection.
     Returns {} for no tickers or on failure (never raises).
     """
     tickers = list(tickers)
