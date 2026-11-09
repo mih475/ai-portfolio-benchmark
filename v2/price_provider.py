@@ -167,8 +167,8 @@ def window_download(tickers, as_of=None, period="6mo", interval="1d",
 def day_ohlc(tickers, as_of=None, _downloader=None) -> dict:
     """Return {ticker: {open, high, low, close}} for the bar on `as_of`.
 
-    Live: today's (latest) bar. Historical: the bar on `as_of`. Non-trading
-    In BACKTEST_STRICT_PRICES mode historical `as_of` requires an exact-session
+    Live: today's (latest) bar. In BACKTEST_STRICT_PRICES mode historical
+    `as_of` requires an exact-session
     bar (no prior-session substitution); live/paper retains its prior selection.
     Returns {} for no tickers or on failure (never raises).
     """
@@ -212,6 +212,33 @@ def day_ohlc(tickers, as_of=None, _downloader=None) -> dict:
                 out[tkr] = bar
             except Exception as exc:
                 logger.warning("Could not parse OHLC for %s on %s: %s", tkr, as_of, exc)
+
+        # Yahoo sometimes returns an incomplete multi-ticker batch even though
+        # an individual ticker request succeeds. Retry only missing symbols,
+        # still requiring the exact session's actual OHLC (no fabricated mark).
+        if historical and len(tickers) > 1:
+            for tkr in sorted(set(tickers) - set(out)):
+                try:
+                    individual = window_download([tkr], as_of=as_of, period="5d",
+                                                 _downloader=_downloader)
+                    if individual is None or individual.empty:
+                        continue
+                    if getattr(getattr(individual, "columns", None), "nlevels", 1) > 1:
+                        individual = individual.xs(tkr, level=1, axis=1)
+                    matches = individual.loc[individual.index.date == as_of]
+                    if matches.empty:
+                        continue
+                    row = matches.iloc[-1]
+                    bar = {name: float(row[column]) for name, column in (
+                        ("open", "Open"), ("high", "High"),
+                        ("low", "Low"), ("close", "Close"))}
+                    if (all(math.isfinite(v) and v > 0 for v in bar.values())
+                        and bar["low"] <= min(bar["open"], bar["close"])
+                        and bar["high"] >= max(bar["open"], bar["close"])):
+                        out[tkr] = bar
+                        logger.info("Recovered exact-session OHLC for %s on %s", tkr, as_of)
+                except Exception as exc:
+                    logger.warning("Individual historical retry failed %s: %s", tkr, exc)
         return out
     except Exception as e:
         logger.error(f"day_ohlc failed: {e}")
