@@ -144,6 +144,8 @@ def fetch_market_narrative(snapshot_date: date) -> str:
 
 def fetch_sector_rotation(as_of: Optional[date] = None) -> Dict[str, Any]:
     """Calculate RRG Rotation (RS-Ratio and RS-Momentum) for 11 sectors."""
+    if os.getenv("BACKTEST_STRICT_PRICES") == "1" and as_of is not None:
+        return _fetch_historical_sector_rotation(as_of)
     logger.info(f"Calculating Sector Rotation (RRG) - {RRG_WINDOW}d window...")
     try:
         from .price_provider import window_download
@@ -199,6 +201,104 @@ def fetch_sector_rotation(as_of: Optional[date] = None) -> Dict[str, Any]:
     except Exception as e:
         logger.error(f"Sector rotation failed: {e}")
         return {"error": str(e)}
+
+
+def _fetch_historical_sector_rotation(as_of: date) -> Dict[str, Any]:
+    """Historical-only RRG with exact-date ETF coverage and targeted recovery.
+
+    Yahoo occasionally provides a partially populated ETF batch (e.g. XLF on
+    March 4, 2024) or reports an SQLite-cache lock. Serial downloads plus
+    individual recovery avoid treating such a failure as actual sector weakness.
+    Never substitute a prior session or infer a quadrant from NaN.
+    """
+    from .price_provider import window_download
+
+    tickers = list(dict.fromkeys([*SECTOR_ETFS.values(), BENCHMARK]))
+    try:
+        batch = window_download(tickers, as_of=as_of, period="6mo",
+                                interval="1d", threads=False)
+        try:
+            prices = batch["Close"].copy() if batch is not None and not batch.empty else pd.DataFrame()
+        except (KeyError, ValueError):
+            prices = pd.DataFrame()
+
+        min_sessions = RRG_WINDOW + 10  # SMA-90 and RS-momentum 10d
+        missing = []
+        for ticker in tickers:
+            series = prices[ticker].dropna() if ticker in prices else pd.Series(dtype=float)
+            valid = (len(series) >= min_sessions
+                     and series.index[-1].date() == as_of
+                     and bool((series > 0).all()))
+            if valid:
+                continue
+
+            # Only recover incomplete symbols, never re-download healthy ones.
+            logger.warning("Historical sector %s incomplete at %s; retrying individually",
+                           ticker, as_of)
+            single = window_download([ticker], as_of=as_of, period="6mo",
+                                     interval="1d", threads=False)
+            if single is None or single.empty:
+                missing.append(ticker)
+                continue
+            try:
+                recovered = single["Close"]
+                if isinstance(recovered, pd.DataFrame):
+                    if ticker in recovered.columns:
+                        recovered = recovered[ticker]
+                    elif len(recovered.columns) == 1:
+                        recovered = recovered.iloc[:, 0]
+                    else:
+                        raise KeyError(ticker)
+                recovered = recovered.dropna()
+                if (len(recovered) < min_sessions
+                    or recovered.index[-1].date() != as_of
+                    or not bool((recovered > 0).all())):
+                    missing.append(ticker)
+                    continue
+                prices[ticker] = recovered
+                logger.info("Recovered historical sector ETF %s at %s", ticker, as_of)
+            except (KeyError, ValueError, TypeError) as exc:
+                logger.warning("Historical sector recovery invalid for %s: %s", ticker, exc)
+                missing.append(ticker)
+
+        if missing:
+            msg = f"Sector history incomplete for {as_of}: {sorted(missing)}"
+            logger.error(msg)
+            return {"error": msg}
+
+        benchmark = prices[BENCHMARK]
+        rotations = {}
+        for sector, ticker in SECTOR_ETFS.items():
+            ratio = (prices[ticker] / benchmark).replace([np.inf, -np.inf], np.nan).dropna()
+            if len(ratio) < min_sessions or ratio.index[-1].date() != as_of:
+                return {"error": f"Insufficient aligned sector/SPY history for {ticker} at {as_of}"}
+            sma90 = ratio.rolling(window=RRG_WINDOW, min_periods=RRG_WINDOW).mean()
+            rs_ratio = 100 * (1 + (ratio - sma90) / sma90)
+            sma10 = rs_ratio.rolling(window=10, min_periods=10).mean()
+            rs_momentum = 100 * (1 + (rs_ratio - sma10) / sma10)
+            latest_ratio = float(rs_ratio.iloc[-1])
+            latest_momentum = float(rs_momentum.iloc[-1])
+            if not np.isfinite(latest_ratio) or not np.isfinite(latest_momentum):
+                return {"error": f"Undefined historical sector rotation for {ticker} at {as_of}"}
+            if latest_ratio >= 100 and latest_momentum >= 100:
+                quadrant = "LEADING"
+            elif latest_ratio >= 100:
+                quadrant = "WEAKENING"
+            elif latest_momentum < 100:
+                quadrant = "LAGGING"
+            else:
+                quadrant = "IMPROVING"
+            rotations[sector] = {
+                "ticker": ticker,
+                "rs_ratio": round(latest_ratio, 2),
+                "rs_momentum": round(latest_momentum, 2),
+                "quadrant": quadrant,
+            }
+        return rotations
+    except Exception as exc:
+        logger.exception("Historical sector rotation failed for %s: %s", as_of, exc)
+        return {"error": f"Historical sector rotation failed on {as_of}: {exc}"}
+
 
 def fetch_watchlist_universe() -> List[str]:
     """Discover a broad set of $3-$50 tickers. Uses S&P 600 (Small Cap) as the core hunting ground."""
@@ -271,8 +371,14 @@ def fetch_watchlist_data(tickers: List[str], as_of: Optional[date] = None) -> Li
     try:
         from .price_provider import window_download
         data = window_download(tickers, as_of=as_of, period="5d")
-        if data.empty: return []
-        
+        strict = os.getenv("BACKTEST_STRICT_PRICES") == "1" and as_of is not None
+        if data is None or data.empty:
+            if strict:
+                raise ValueError(f"No historical watchlist prices on {as_of}")
+            return []
+        if strict and data.index[-1].date() != as_of:
+            raise ValueError(f"Watchlist last session {data.index[-1]} != {as_of}")
+
         closes = data["Close"].iloc[-1]
         volumes = data["Volume"].tail(5).mean()
         
@@ -302,6 +408,8 @@ def fetch_watchlist_data(tickers: List[str], as_of: Optional[date] = None) -> Li
         return watchlist[:WATCHLIST_SIZE]
     except Exception as e:
         logger.error(f"Watchlist fetch failed: {e}")
+        if os.getenv("BACKTEST_STRICT_PRICES") == "1":
+            raise
         return []
 
 def discover_catalysts(tickers: List[str]) -> Dict[str, str]:
@@ -530,10 +638,13 @@ def build_mih_snapshot(snapshot_date: Optional[date] = None, save_dir: Optional[
 
     # 3. Watchlist & Discover Catalysts
     universe = fetch_watchlist_universe()
+    strict_history = historical and os.getenv("BACKTEST_STRICT_PRICES") == "1"
 
-    # NEW: Dynamic Sector Champion discovery (unbiased alpha)
-    champions = fetch_dynamic_sector_champions(rotation)
-    universe = list(set(universe + champions))
+    # Do not inject a 2026 ETF constituent map into earlier historical runs.
+    # Historical stock selection is STILL limited by our curated modern seeds;
+    # a true survivorship-free dataset is a separate requirement.
+    champions = [] if strict_history else fetch_dynamic_sector_champions(rotation)
+    universe = list(dict.fromkeys([*universe, *champions]))
 
     watchlist_raw = fetch_watchlist_data(universe, as_of=as_of)
 
@@ -543,6 +654,16 @@ def build_mih_snapshot(snapshot_date: Optional[date] = None, save_dir: Optional[
     # skip it for a historical snapshot (same look-ahead reason as the narrative).
     catalysts = {} if historical else discover_catalysts(valid_tickers)
     technicals = compute_technicals(valid_tickers, as_of=as_of)
+    if strict_history:
+        # Only candidates with real 200-session SMA and matched 3-month SPY
+        # history can enter the model's tradeable historical opportunity set.
+        before = len(watchlist_raw)
+        watchlist_raw = [s for s in watchlist_raw
+                         if (s["Tkr"] in technicals
+                             and technicals[s["Tkr"]].get("SMA_200_Dist") is not None
+                             and technicals[s["Tkr"]].get("RS_3M_vs_SPY") is not None)]
+        logger.info("Strict historical eligibility %s: %d/%d symbols retained",
+                    as_of, len(watchlist_raw), before)
     
     for stock in watchlist_raw:
         tkr = stock["Tkr"]
@@ -566,7 +687,12 @@ def build_mih_snapshot(snapshot_date: Optional[date] = None, save_dir: Optional[
         "metadata": {
             "date": snapshot_date.isoformat(),
             "version": "V2-MIH-2026",
-            "is_market_day": is_market_day(snapshot_date)
+            "is_market_day": is_market_day(snapshot_date),
+            "historical_universe_warning": (
+                "Curated contemporary ticker seed; point-in-time prices and listing-age "
+                "checks do NOT eliminate survivorship or symbol-change bias. "
+                "Do not claim unbiased historical alpha."
+            ) if strict_history else None,
         },
         # Machine-readable watchlist (list of dicts with at least "Tkr" and "Price").
         # Exposed so the simulator/runner can source fill & mark prices without
