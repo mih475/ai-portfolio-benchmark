@@ -54,6 +54,68 @@ def t_iter_dates_rejects_reversed():
 
 
 @test
+def t_market_dates_excludes_weekend_with_injected_exchange_calendar():
+    # March 9 and 10, 2024 were Saturday/Sunday. Reject rather than
+    # fetching stale Friday prices or paying for an unnecessary LLM decision.
+    from datetime import date
+    def sessions(start, end):
+        assert (start, end) == ("2024-03-07", "2024-03-12")
+        return [date(2024, 3, 7), date(2024, 3, 8),
+                date(2024, 3, 11), date(2024, 3, 12)]
+    out = list(bt.iter_market_dates("2024-03-07", "2024-03-12", _schedule=sessions))
+    assert out == ["2024-03-07", "2024-03-08", "2024-03-11", "2024-03-12"], out
+
+
+@test
+def t_market_dates_excludes_good_friday_holiday():
+    # 2024-03-29 was Good Friday: weekdays-only iteration would be wrong.
+    from datetime import date
+    sessions = lambda *_: [date(2024, 3, 28), date(2024, 4, 1)]
+    assert list(bt.iter_market_dates("2024-03-28", "2024-04-01",
+                                     _schedule=sessions)) == [
+                                         "2024-03-28", "2024-04-01"]
+
+
+@test
+def t_market_date_range_validated_before_market_fetch():
+    try:
+        list(bt.iter_market_dates("2024-04-05", "2024-03-04",
+                                  _schedule=lambda *_: []))
+        assert False, "reversed date range accepted"
+    except ValueError:
+        pass
+    assert list(bt.iter_market_dates("2024-03-09", "2024-03-10",
+                                      _schedule=lambda *_: [])) == []
+
+
+@test
+def t_market_date_calendar_rejects_duplicate_and_out_of_bounds_sessions():
+    from datetime import date
+    for results in ([date(2024, 3, 8), date(2024, 3, 8)],
+                    [date(2024, 3, 7)],
+                    [date(2024, 3, 12), date(2024, 3, 8)]):
+        try:
+            list(bt.iter_market_dates("2024-03-08", "2024-03-12",
+                                      _schedule=lambda *_, rows=results: rows))
+            assert False, f"invalid schedule accepted: {results}"
+        except ValueError:
+            pass
+
+
+@test
+def t_market_date_calendar_does_not_fall_back_when_unavailable():
+    # A calendar failure must not fall back to generating Saturday snapshots.
+    def broken_calendar(*_):
+        raise RuntimeError("NYSE calendar unavailable")
+    try:
+        list(bt.iter_market_dates("2024-03-07", "2024-03-12",
+                                  _schedule=broken_calendar))
+        assert False, "calendar failure silently treated as valid"
+    except RuntimeError:
+        pass
+
+
+@test
 def t_agent_metrics_computes_value_and_return():
     state = {
         "agent_id": "gemini_balanced",
