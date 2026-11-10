@@ -201,8 +201,11 @@ class PortfolioSimulator:
         triggered_transactions = []
         tickers_to_remove = []
 
+        strict = os.getenv("BACKTEST_STRICT_PRICES") == "1"
         for ticker, pos in self.positions.items():
             if ticker not in ohlc_data:
+                if strict:
+                    raise ValueError(f"Missing exact-session stop/target OHLC for {ticker} on {today}")
                 logger.warning(f"No OHLC data for {ticker}, skipping stop check")
                 continue
 
@@ -211,8 +214,14 @@ class PortfolioSimulator:
             high = bar["high"]
             open_px = bar.get("open", bar["close"])
 
+            # At the opening auction, an already-breached take-profit executes
+            # BEFORE later intraday lows. For ambiguous intraday H/L touches
+            # (both stop and target), conservatively assume stop hit first.
+            # Keep the historical fix out of the existing live-paper path.
+            target_at_open = (strict and pos.take_profit_price is not None
+                              and open_px >= pos.take_profit_price)
             # Check STOP-LOSS: triggered if Low ≤ stop_loss_price
-            if low <= pos.stop_loss_price:
+            if low <= pos.stop_loss_price and not target_at_open:
                 # If the bar gapped DOWN through the stop (open below stop), the
                 # realistic fill is the open, not the stop price. Taking the stop
                 # price on a gap-down overstates performance. Fill at the worse of
@@ -285,10 +294,17 @@ class PortfolioSimulator:
         for order in self.pending_orders:
             ticker = order.ticker
             if ticker not in open_prices:
+                if os.getenv("BACKTEST_STRICT_PRICES") == "1":
+                    raise ValueError(f"Missing exact-session opening fill for {ticker} on {today}")
                 logger.warning(f"No open price for {ticker}, cancelling order")
                 continue
 
             open_price = open_prices[ticker]
+            if os.getenv("BACKTEST_STRICT_PRICES") == "1" and (
+                not isinstance(open_price, (int, float))
+                or not math.isfinite(open_price) or open_price <= 0
+            ):
+                raise ValueError(f"Invalid exact-session opening fill for {ticker} on {today}")
 
             # Check LIMIT orders
             if order.order_type == OrderType.LIMIT:
@@ -467,6 +483,16 @@ class PortfolioSimulator:
                 if allocation_pct > self.rules.max_position_pct * 100:
                     allocation_pct = self.rules.max_position_pct * 100
                     logger.warning(f"[{self.agent_id}] Capped allocation for {ticker} to {allocation_pct}%")
+
+            # Historical backtests must never fabricate cash from a negative
+            # discretionary SELL or silently interpret an out-of-range exit.
+            if (os.getenv("BACKTEST_STRICT_PRICES") == "1" and action == "SELL"
+                    and (not isinstance(allocation_pct, (int, float))
+                         or not math.isfinite(allocation_pct)
+                         or not 0 < allocation_pct <= 100)):
+                results.append({"trade": trade, "status": "REJECTED",
+                                "reason": f"Invalid SELL fraction: {allocation_pct}"})
+                continue
 
             # 4. Max daily buys
             if action == "BUY":
