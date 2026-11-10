@@ -300,6 +300,24 @@ def _fetch_historical_sector_rotation(as_of: date) -> Dict[str, Any]:
         return {"error": f"Historical sector rotation failed on {as_of}: {exc}"}
 
 
+def _has_complete_historical_indicators(stock: dict, technicals: dict) -> bool:
+    """Historical eligibility: real SMA-200, relative strength and ATR.
+
+    A current ticker name and recent price are not proof that a symbol was
+    tradeable throughout an earlier period. Reject incomplete/stale candidates
+    rather than inferring missing risk inputs. This is NOT survivorship-free.
+    """
+    import math  # local import also supports AST-isolated regression tests
+    metrics = technicals.get(stock.get("Tkr"))
+    if not isinstance(metrics, dict):
+        return False
+    for field in ("SMA_200_Dist", "RS_3M_vs_SPY", "ATR_Pct"):
+        value = metrics.get(field)
+        if not isinstance(value, (int, float)) or not math.isfinite(value):
+            return False
+    return metrics["ATR_Pct"] > 0
+
+
 def fetch_watchlist_universe() -> List[str]:
     """Discover a broad set of $3-$50 tickers. Uses S&P 600 (Small Cap) as the core hunting ground."""
     logger.info("Scanning for $3-$50 Watchlist Universe...")
@@ -659,9 +677,7 @@ def build_mih_snapshot(snapshot_date: Optional[date] = None, save_dir: Optional[
         # history can enter the model's tradeable historical opportunity set.
         before = len(watchlist_raw)
         watchlist_raw = [s for s in watchlist_raw
-                         if (s["Tkr"] in technicals
-                             and technicals[s["Tkr"]].get("SMA_200_Dist") is not None
-                             and technicals[s["Tkr"]].get("RS_3M_vs_SPY") is not None)]
+                         if _has_complete_historical_indicators(s, technicals)]
         logger.info("Strict historical eligibility %s: %d/%d symbols retained",
                     as_of, len(watchlist_raw), before)
     
