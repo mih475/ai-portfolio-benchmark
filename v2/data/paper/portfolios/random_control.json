@@ -1,0 +1,36 @@
+{
+  "agent_id": "random_control",
+  "cash": 10000.0,
+  "starting_capital": 10000.0,
+  "peak_value": 10000.0,
+  "max_drawdown": 0.0,
+  "last_value": 10000.0,
+  "positions": {},
+  "pending_orders": [
+    {
+      "action": "BUY",
+      "ticker": "LCID",
+      "allocation_pct": 10.99,
+      "order_type": "MARKET",
+      "limit_price": null,
+      "stop_loss_pct": 10.3,
+      "take_profit_pct": null,
+      "reason": "Randomly selected from liquid universe.",
+      "submitted_date": "2026-11-09"
+    },
+    {
+      "action": "BUY",
+      "ticker": "SNAP",
+      "allocation_pct": 6.49,
+      "order_type": "MARKET",
+      "limit_price": null,
+      "stop_loss_pct": 7.6,
+      "take_profit_pct": null,
+      "reason": "Randomly selected from liquid universe.",
+      "submitted_date": "2026-11-09"
+    }
+  ],
+  "daily_returns": [
+    0.0
+  ]
+}

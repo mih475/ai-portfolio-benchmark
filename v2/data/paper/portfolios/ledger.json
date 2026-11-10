@@ -1,0 +1,50 @@
+[
+  {
+    "date": "2026-11-09",
+    "agents": {
+      "claude_aggressive": {
+        "value": 10000.0,
+        "day_ret": 0.0,
+        "cum_ret": 0.0,
+        "cash_pct": 100.0,
+        "n_positions": 0,
+        "positions": [],
+        "max_drawdown": 0.0,
+        "fills_today": [],
+        "pending_next_open": [
+          {
+            "action": "BUY",
+            "ticker": "CELH",
+            "allocation_pct": 10
+          }
+        ]
+      },
+      "random_control": {
+        "value": 10000.0,
+        "day_ret": 0.0,
+        "cum_ret": 0.0,
+        "cash_pct": 100.0,
+        "n_positions": 0,
+        "positions": [],
+        "max_drawdown": 0.0,
+        "fills_today": [],
+        "pending_next_open": [
+          {
+            "action": "BUY",
+            "ticker": "LCID",
+            "allocation_pct": 10.99
+          },
+          {
+            "action": "BUY",
+            "ticker": "SNAP",
+            "allocation_pct": 6.49
+          }
+        ]
+      }
+    },
+    "spy": {
+      "value": 10000.0,
+      "cum_ret": 0.0
+    }
+  }
+]

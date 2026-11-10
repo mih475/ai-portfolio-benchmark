@@ -1,0 +1,8 @@
+{
+  "inception": "2026-11-09",
+  "agents": [
+    "claude_aggressive",
+    "random_control"
+  ],
+  "last_run": "2026-11-09"
+}
