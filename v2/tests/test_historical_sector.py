@@ -134,12 +134,32 @@ def test_historical_watchlist_excludes_ipo_with_no_asof_bar():
             os.environ["BACKTEST_STRICT_PRICES"] = old
 
 
+def test_historical_snapshot_fails_closed_on_missing_sector_history():
+    old = os.environ.get("BACKTEST_STRICT_PRICES")
+    os.environ["BACKTEST_STRICT_PRICES"] = "1"
+    try:
+        with patch.object(engine, "fetch_macro_data", return_value={}), \
+             patch.object(engine, "fetch_sector_rotation",
+                          return_value={"error": "XLF unavailable"}):
+            try:
+                engine.build_mih_snapshot(snapshot_date=date(2024, 3, 4))
+                assert False, "historical snapshot should fail closed"
+            except ValueError as exc:
+                assert "XLF unavailable" in str(exc), exc
+    finally:
+        if old is None:
+            os.environ.pop("BACKTEST_STRICT_PRICES", None)
+        else:
+            os.environ["BACKTEST_STRICT_PRICES"] = old
+
+
 def main():
     tests = [
         t_historical_candidate_filters_missing_or_nonfinite_indicators,
         test_recovery_then_sector_rotation,
         test_unrecoverable_sector_missing_is_reported_not_fabricated,
         test_historical_watchlist_excludes_ipo_with_no_asof_bar,
+        test_historical_snapshot_fails_closed_on_missing_sector_history,
     ]
     for test in tests:
         test()
