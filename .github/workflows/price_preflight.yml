@@ -3,6 +3,9 @@ name: Historical Price Preflight (no AI calls)
 on:
   pull_request:
     paths:
+      - 'v2/backtest.py'
+      - 'v2/tests/test_backtest.py'
+      - 'v2/scripts/preflight_calendar.py'
       - 'v2/price_provider.py'
       - 'v2/snapshot_engine.py'
       - 'v2/tests/test_historical_sector.py'
@@ -31,7 +34,7 @@ jobs:
           python-version: '3.11'
           cache: 'pip'
       - name: Install price dependencies (no model packages required)
-        run: pip install yfinance pandas numpy python-dotenv
+        run: pip install yfinance pandas numpy python-dotenv pandas-market-calendars
       - name: Verify historical bars without an LLM
         env:
           PYTHONPATH: ${{ github.workspace }}
@@ -49,3 +52,7 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}
           BACKTEST_STRICT_PRICES: "1"
         run: python -m v2.scripts.preflight_sector --date "2024-03-04"
+      - name: Verify actual NYSE trading sessions before any paid backtest
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m v2.scripts.preflight_calendar
