@@ -655,7 +655,16 @@ def build_mih_snapshot(snapshot_date: Optional[date] = None, save_dir: Optional[
     # 2. Sector Rotation (RRG)
     rotation = fetch_sector_rotation(as_of=as_of)
     if strict_history and rotation.get("error"):
-        raise ValueError(f"Historical sector snapshot invalid on {as_of}: {rotation['error']}")
+        # The snapshot is built for every calendar day in the range BEFORE
+        # run_all_agents skips non-trading days, so a holiday/weekend start date
+        # (e.g. 2020-01-01, New Year's) legitimately has no sector bars. RRG is
+        # non-critical context and no trading happens on a closed day, so only a
+        # genuine failure on an actual NYSE session should stop the run.
+        if is_market_day(as_of):
+            raise ValueError(f"Historical sector snapshot invalid on {as_of}: {rotation['error']}")
+        logger.warning("Sector snapshot incomplete on non-trading %s (%s) — "
+                       "proceeding; markets closed, no trades this day.",
+                       as_of, rotation.get("error"))
 
     # 3. Watchlist & Discover Catalysts
     universe = fetch_watchlist_universe()
