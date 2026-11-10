@@ -639,6 +639,7 @@ def build_mih_snapshot(snapshot_date: Optional[date] = None, save_dir: Optional[
     # whole snapshot historical; for today/future it stays on the live path.
     as_of = snapshot_date
     historical = as_of is not None and as_of < date.today()
+    strict_history = historical and os.getenv("BACKTEST_STRICT_PRICES") == "1"
 
     # 1. Macro & Narrative
     macro = fetch_macro_data(as_of=as_of)
@@ -653,10 +654,11 @@ def build_mih_snapshot(snapshot_date: Optional[date] = None, save_dir: Optional[
 
     # 2. Sector Rotation (RRG)
     rotation = fetch_sector_rotation(as_of=as_of)
+    if strict_history and rotation.get("error"):
+        raise ValueError(f"Historical sector snapshot invalid on {as_of}: {rotation['error']}")
 
     # 3. Watchlist & Discover Catalysts
     universe = fetch_watchlist_universe()
-    strict_history = historical and os.getenv("BACKTEST_STRICT_PRICES") == "1"
 
     # Do not inject a 2026 ETF constituent map into earlier historical runs.
     # Historical stock selection is STILL limited by our curated modern seeds;
