@@ -400,6 +400,182 @@ def t_strict_history_fails_closed_if_existing_json_corrupt():
             os.environ["BACKTEST_STRICT_PRICES"] = old
 
 
+# ── End-to-end strict historical lifecycle (no market or model API calls) ───
+
+@test
+def t_strict_buy_then_agent_sell_across_rebuilt_sessions():
+    """Decision after close -> next-open BUY -> next-open discretionary SELL."""
+    import json
+    from contextlib import contextmanager
+
+    @contextmanager
+    def strict():
+        old = os.environ.get("BACKTEST_STRICT_PRICES")
+        os.environ["BACKTEST_STRICT_PRICES"] = "1"
+        try:
+            yield
+        finally:
+            if old is None:
+                os.environ.pop("BACKTEST_STRICT_PRICES", None)
+            else:
+                os.environ["BACKTEST_STRICT_PRICES"] = old
+
+    with strict():
+        d = Path(tempfile.mkdtemp())
+        rules = make_rules()
+        day1 = PortfolioSimulator("agent", 10000.0, rules, d)
+        assert day1.submit_orders([{"action": "BUY", "ticker": "ABC",
+                                    "allocation_pct": 10,
+                                    "stop_loss_pct": 10,
+                                    "take_profit_pct": 30}], "2024-03-04")[0]["status"] == "ACCEPTED"
+        day1.mark_to_market({}, "2024-03-04")
+        day1.save_state()
+        day1.save_snapshot_history()
+
+        day2 = PortfolioSimulator("agent", 10000.0, rules, d)
+        buys = day2.execute_pending_orders({"ABC": 20.0}, "2024-03-05")
+        assert len(buys) == 1 and buys[0].action == "BUY"
+        assert approx(buys[0].price, 20.0 * 1.001)
+        assert day2.check_stops_and_targets(
+            {"ABC": {"open": 20.0, "high": 21.0, "low": 19.0, "close": 20.5}},
+            "2024-03-05") == []
+        day2.mark_to_market({"ABC": 20.5}, "2024-03-05")
+        result = day2.submit_orders([{"action": "SELL", "ticker": "ABC",
+                                      "allocation_pct": 100}], "2024-03-05")
+        assert result[0]["status"] == "ACCEPTED"
+        day2.save_state()
+        day2.save_snapshot_history()
+
+        day3 = PortfolioSimulator("agent", 10000.0, rules, d)
+        sells = day3.execute_pending_orders({"ABC": 21.0}, "2024-03-06")
+        assert len(sells) == 1 and sells[0].action == "SELL"
+        assert sells[0].trigger == "AGENT"
+        assert approx(sells[0].price, 21.0 * 0.999)
+        assert "ABC" not in day3.positions
+        assert not day3.pending_orders
+        day3.check_stops_and_targets({}, "2024-03-06")
+        day3.mark_to_market({}, "2024-03-06")
+        day3.save_state()
+        day3.save_snapshot_history()
+
+        entries = json.loads((d / "agent_history.json").read_text())
+        assert [e["date"] for e in entries] == [
+            "2024-03-04", "2024-03-05", "2024-03-06"]
+        assert [e["transactions_today"][0]["action"] for e in entries[1:]] == [
+            "BUY", "SELL"]
+        assert approx(day3.portfolio_value, 10000 - buys[0].total + sells[0].total, tol=1e-3)
+
+
+@test
+def t_strict_entry_day_stop_after_next_open_fill():
+    """A freshly filled order is subject to that session's intraday stop."""
+    old = os.environ.get("BACKTEST_STRICT_PRICES")
+    os.environ["BACKTEST_STRICT_PRICES"] = "1"
+    try:
+        sim = new_sim()
+        sim.submit_orders([{"action": "BUY", "ticker": "ABC",
+                            "allocation_pct": 10,
+                            "stop_loss_pct": 10}], "2024-03-04")
+        buys = sim.execute_pending_orders({"ABC": 10.0}, "2024-03-05")
+        assert len(buys) == 1 and "ABC" in sim.positions
+        stop = sim.positions["ABC"].stop_loss_price
+        assert stop < 10.0
+        exits = sim.check_stops_and_targets(
+            {"ABC": {"open": 10.0, "high": 10.5, "low": 8.0, "close": 8.5}},
+            "2024-03-05")
+        assert len(exits) == 1 and exits[0].trigger == "STOP_LOSS"
+        assert approx(exits[0].price, round(stop * .999, 4))
+        assert "ABC" not in sim.positions
+        snap = sim.mark_to_market({}, "2024-03-05")
+        assert [t["action"] for t in snap.transactions_today] == ["BUY", "SELL"]
+        assert snap.portfolio_value < 10000
+    finally:
+        if old is None:
+            os.environ.pop("BACKTEST_STRICT_PRICES", None)
+        else:
+            os.environ["BACKTEST_STRICT_PRICES"] = old
+
+
+@test
+def t_strict_gap_up_target_precedes_later_stop_low():
+    """An opening target wins even if the day's later low crosses the stop."""
+    old = os.environ.get("BACKTEST_STRICT_PRICES")
+    os.environ["BACKTEST_STRICT_PRICES"] = "1"
+    try:
+        sim = new_sim()
+        sim.positions["ABC"] = Position("ABC", 100, 10.0, "2024-03-04",
+                                        stop_loss_price=9.0,
+                                        take_profit_price=12.0,
+                                        current_price=10.0)
+        txns = sim.check_stops_and_targets(
+            {"ABC": {"open": 13.0, "high": 13.5, "low": 8.0, "close": 10.0}},
+            "2024-03-05")
+        assert len(txns) == 1
+        assert txns[0].trigger == "TAKE_PROFIT"
+        assert approx(txns[0].price, 13.0 * .999, tol=1e-5)
+    finally:
+        if old is None:
+            os.environ.pop("BACKTEST_STRICT_PRICES", None)
+        else:
+            os.environ["BACKTEST_STRICT_PRICES"] = old
+
+
+@test
+def t_strict_ambiguous_intraday_both_stop_and_target_is_conservative():
+    old = os.environ.get("BACKTEST_STRICT_PRICES")
+    os.environ["BACKTEST_STRICT_PRICES"] = "1"
+    try:
+        sim = new_sim()
+        sim.positions["ABC"] = Position("ABC", 100, 10.0, "2024-03-04",
+                                        stop_loss_price=9.0,
+                                        take_profit_price=12.0,
+                                        current_price=10.0)
+        txns = sim.check_stops_and_targets(
+            {"ABC": {"open": 10.0, "high": 13.0, "low": 8.0, "close": 11.0}},
+            "2024-03-05")
+        assert len(txns) == 1 and txns[0].trigger == "STOP_LOSS"
+    finally:
+        if old is None:
+            os.environ.pop("BACKTEST_STRICT_PRICES", None)
+        else:
+            os.environ["BACKTEST_STRICT_PRICES"] = old
+
+
+@test
+def t_strict_invalid_sell_allocation_and_missing_execution_bars():
+    old = os.environ.get("BACKTEST_STRICT_PRICES")
+    os.environ["BACKTEST_STRICT_PRICES"] = "1"
+    try:
+        sim = new_sim()
+        sim.positions["ABC"] = Position("ABC", 100, 10.0, "2024-03-04",
+                                        stop_loss_price=9.0, current_price=10.0)
+        for pct in (-25, 0, 101, float("nan")):
+            result = sim.submit_orders([{"action": "SELL", "ticker": "ABC",
+                                         "allocation_pct": pct}], "2024-03-04")
+            assert result[0]["status"] == "REJECTED", result
+        assert sim.pending_orders == []
+        try:
+            sim.check_stops_and_targets({}, "2024-03-05")
+            assert False, "missing historical stop bar must fail"
+        except ValueError:
+            pass
+        assert sim.submit_orders([{"action": "SELL", "ticker": "ABC",
+                                   "allocation_pct": 100}], "2024-03-04")[0]["status"] == "ACCEPTED"
+        for opens in ({}, {"ABC": 0}, {"ABC": float("nan")}):
+            try:
+                sim.execute_pending_orders(opens, "2024-03-05")
+                assert False, "missing/invalid historical open must fail"
+            except ValueError:
+                pass
+        assert "ABC" in sim.positions
+        assert len(sim.pending_orders) == 1
+    finally:
+        if old is None:
+            os.environ.pop("BACKTEST_STRICT_PRICES", None)
+        else:
+            os.environ["BACKTEST_STRICT_PRICES"] = old
+
+
 # ─────────────────────────────────────────────────────────────────────────
 def main():
     passed = failed = 0

@@ -4,7 +4,10 @@ on:
   pull_request:
     paths:
       - 'v2/price_provider.py'
+      - 'v2/snapshot_engine.py'
+      - 'v2/tests/test_historical_sector.py'
       - 'v2/scripts/preflight_prices.py'
+      - 'v2/scripts/preflight_sector.py'
       - '.github/workflows/price_preflight.yml'
   workflow_dispatch:
     inputs:
@@ -37,3 +40,12 @@ jobs:
           python -m v2.scripts.preflight_prices \
             --date "${{ inputs.run_date || '2022-06-15' }}" \
             --tickers "${{ inputs.tickers || 'SPY,PLTR,HPQ' }}"
+      - name: Run in-memory historical sector / eligibility tests (no model API)
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m v2.tests.test_historical_sector
+      - name: Verify real March 2024 sector ETF data (no model API)
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+          BACKTEST_STRICT_PRICES: "1"
+        run: python -m v2.scripts.preflight_sector --date "2024-03-04"
