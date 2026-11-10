@@ -119,15 +119,29 @@ def is_live(as_of) -> bool:
     return as_of is None or as_of >= date.today()
 
 
+_YF_TZ_CACHE_CONFIGURED = False
+
+
 def _resolve_downloader(_downloader):
     if _downloader is not None:
         return _downloader
     import yfinance as yf  # lazy; only needed for real fetches
+    global _YF_TZ_CACHE_CONFIGURED
+    if os.getenv("BACKTEST_STRICT_PRICES") == "1" and not _YF_TZ_CACHE_CONFIGURED:
+        # A dedicated per-process timezone-cache directory prevents two jobs
+        # on a shared runner from writing the same yfinance SQLite cache.
+        # Preserve the current live/paper setup outside historical backtests.
+        import tempfile
+        tz_dir = Path(tempfile.gettempdir()) / f"yfinance-historical-tz-{os.getpid()}"
+        tz_dir.mkdir(parents=True, exist_ok=True)
+        if hasattr(yf, "set_tz_cache_location"):
+            yf.set_tz_cache_location(str(tz_dir))
+        _YF_TZ_CACHE_CONFIGURED = True
     return yf.download
 
 
 def window_download(tickers, as_of=None, period="6mo", interval="1d",
-                    _downloader=None, _sleep=None):
+                    _downloader=None, _sleep=None, threads=None):
     """Return a yfinance DataFrame of bars for `tickers`.
 
     Live (`as_of` None/today/future): the last `period` of data.
@@ -158,6 +172,8 @@ def window_download(tickers, as_of=None, period="6mo", interval="1d",
     logger.info(f"Historical window {start}..{as_of} ({interval}) for "
                 f"{len(tickers) if hasattr(tickers, '__len__') else '?'} tickers")
     kwargs = dict(start=start, end=end, interval=interval, progress=False)
+    if threads is not None:
+        kwargs["threads"] = threads
     data = _download_with_retry(download, tickers, kwargs, sleep=_sleep)
     if key is not None:
         _cache_store(key, data)
