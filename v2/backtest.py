@@ -3,11 +3,13 @@ Multi-day backtest driver.
 
 Runs the daily loop over a date range *in order, in one process*, so each day's
 persisted portfolio state carries into the next (pending orders fill the next
-market day, stops/marks accumulate). Non-market days are skipped by
-run_all_agents itself, so we can just iterate calendar days.
+NYSE session, stops/marks accumulate). The historical simulation MUST iterate
+only exchange sessions; invoking the snapshot on a Saturday or market holiday
+would fail exact-date data checks after wasting model API calls.
 
-`iter_dates` is kept import-light (stdlib only) so it's unit-testable without
-pulling in the heavy runner.
+`iter_dates` remains a stdlib-only inclusive calendar-range helper for existing
+callers. `iter_market_dates` uses the authoritative NYSE exchange calendar
+lazily and is injection-testable without pandas installed in offline CI.
 """
 
 import json
@@ -94,13 +96,46 @@ def iter_dates(start_iso: str, end_iso: str):
         d += timedelta(days=1)
 
 
+def iter_market_dates(start_iso: str, end_iso: str, _schedule=None):
+    """Yield only NYSE sessions within an inclusive date range.
+
+    Uses pandas_market_calendars on actual runs (including Good Friday and
+    irregular market closures), never a weekday-only approximation. Tests
+    inject a fake schedule to keep the ordinary CI suite dependency-free.
+    A missing exchange calendar is an explicit failure; never fall back to
+    calendar days or silently include closed-market dates.
+    """
+    start = date.fromisoformat(start_iso)
+    end = date.fromisoformat(end_iso)
+    if end < start:
+        raise ValueError(f"end_date {end_iso} is before start_date {start_iso}")
+    if _schedule is None:
+        import pandas_market_calendars as mcal
+        nyse = mcal.get_calendar("NYSE")
+        sessions = nyse.schedule(start_date=start_iso, end_date=end_iso).index
+    else:
+        sessions = _schedule(start_iso, end_iso)
+    last = None
+    for session in sessions:
+        day = session.date() if hasattr(session, "date") else date.fromisoformat(str(session))
+        if not start <= day <= end:
+            raise ValueError(f"NYSE calendar returned out-of-range date {day}")
+        iso = day.isoformat()
+        if last is not None and iso <= last:
+            raise ValueError(f"NYSE calendar returned duplicate/unsorted session {iso}")
+        last = iso
+        yield iso
+
+
 def run_backtest(start_iso: str, end_iso: str, agent_ids=None):
-    """Run the roster across [start, end] inclusive, one market day at a time."""
+    """Run the roster across [start, end] inclusive, one NYSE session at a time."""
     from .agent_runner import run_all_agents
 
-    dates = list(iter_dates(start_iso, end_iso))
+    dates = list(iter_market_dates(start_iso, end_iso))
+    if not dates:
+        raise ValueError(f"No NYSE trading sessions in range {start_iso}..{end_iso}")
     logger.info(f"=== BACKTEST {start_iso}..{end_iso} "
-                f"({len(dates)} calendar days) agents={agent_ids or 'ALL'} ===")
+                f"({len(dates)} NYSE trading sessions) agents={agent_ids or 'ALL'} ===")
     failures = 0
     for i, d in enumerate(dates, 1):
         logger.info(f"--- Backtest day {i}/{len(dates)}: {d} ---")
