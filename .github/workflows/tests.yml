@@ -58,3 +58,6 @@ jobs:
 
       - name: Run live paper-trade runner test
         run: python3 v2/tests/test_live_runner.py
+
+      - name: Run strict-price gap classifier test
+        run: python3 v2/tests/test_strict_gap.py

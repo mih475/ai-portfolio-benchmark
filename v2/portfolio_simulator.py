@@ -118,6 +118,29 @@ class DailySnapshot:
 
 
 # ─────────────────────────────────────────────
+# Strict-price gap classification
+# ─────────────────────────────────────────────
+
+def is_systematic_price_gap(n_missing: int, n_total: int) -> bool:
+    """Decide whether missing exact-session prices mean a broken data feed
+    (abort the strict backtest) or just an isolated yfinance gap for one name on
+    one session (carry the last mark forward instead).
+
+    Historical Yahoo data has occasional one-session holes for otherwise-liquid
+    tickers (e.g. HPQ on 2020-08-07). Aborting a whole quarter for one such hole
+    throws away a valid backtest; silently trusting a *systematic* failure
+    (nothing came back) would publish false returns. So: trip only when
+    everything is missing, or when at least half — and at least 5 — are missing.
+    A handful of isolated gaps are tolerated and carried forward (with a logged
+    warning) by the callers."""
+    if n_total <= 0:
+        return False
+    if n_missing >= n_total:          # the whole fetch collapsed
+        return True
+    return n_missing >= max(5, (n_total + 1) // 2)
+
+
+# ─────────────────────────────────────────────
 # Portfolio Simulator
 # ─────────────────────────────────────────────
 
@@ -530,8 +553,15 @@ class PortfolioSimulator:
                        or not isinstance(close_prices[t], (float, int))
                        or not math.isfinite(close_prices[t])
                        or close_prices[t] <= 0]
+            if missing and is_systematic_price_gap(len(missing), len(self.positions)):
+                raise ValueError(
+                    f"Missing/invalid exact close on {today} for {missing} "
+                    f"({len(missing)}/{len(self.positions)} positions — systematic)")
             if missing:
-                raise ValueError(f"Missing/invalid exact close on {today} for {missing}")
+                # Isolated gap: keep yesterday's mark for the unpriced name(s).
+                # The loop below updates only the tickers we do have.
+                logger.warning("[%s] %s: isolated missing close for %s — "
+                               "carrying forward last mark.", self.agent_id, today, missing)
         for ticker, pos in self.positions.items():
             if ticker in close_prices:
                 pos.update_price(close_prices[ticker])

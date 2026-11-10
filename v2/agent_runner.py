@@ -164,11 +164,21 @@ def run_agent(agent_id: str, snapshot: dict, simulator: PortfolioSimulator,
     close_prices = {tkr: bar["close"] for tkr, bar in ohlc_data.items()}
     if strict_backtest:
         # Watchlist close/last quote is NEVER a substitute for a T+1 opening fill.
-        # Stop the experiment instead of mispricing a position or cancelling its
-        # exit; this does not alter the existing live paper-trading workflow.
+        # A systematic gap (feed broken) still stops the experiment rather than
+        # mispricing positions; an isolated one-session hole (e.g. HPQ on
+        # 2020-08-07) carries forward held marks and defers the unfillable queued
+        # order (execute_pending_orders cancels it for the day) instead of
+        # aborting the whole quarter. Does not affect live paper trading.
+        from .portfolio_simulator import is_systematic_price_gap
         missing = sorted(set(tickers_needed) - set(ohlc_data))
+        if missing and is_systematic_price_gap(len(missing), len(tickers_needed)):
+            raise ValueError(
+                f"Historical OHLC unavailable on {current_date}: {missing} "
+                f"({len(missing)}/{len(tickers_needed)} needed — systematic)")
         if missing:
-            raise ValueError(f"Historical OHLC unavailable on {current_date}: {missing}")
+            logger.warning("[%s] %s: isolated OHLC gap for %s — carrying forward "
+                           "/ deferring, not aborting.", simulator.agent_id,
+                           current_date, missing)
     else:
         for tkr, price in watchlist_prices.items():
             open_prices.setdefault(tkr, price)
@@ -305,7 +315,17 @@ def run_all_agents(snapshot_date: str, agent_ids: list[str] | None = None):
     if os.getenv("BACKTEST_STRICT_PRICES") == "1":
         missing = sorted(union_tickers - set(shared_ohlc))
         if missing:
-            raise ValueError(f"Backtest {snapshot_date}: no valid exact-session OHLC for {missing}")
+            from .portfolio_simulator import is_systematic_price_gap
+            if is_systematic_price_gap(len(missing), len(union_tickers)):
+                raise ValueError(
+                    f"Backtest {snapshot_date}: systematic price failure — "
+                    f"{len(missing)}/{len(union_tickers)} tickers missing: {missing}")
+            # Isolated yfinance gap (e.g. HPQ on 2020-08-07): don't abort the
+            # whole quarter. Held positions carry forward their last mark in
+            # mark_to_market; a queued order whose fill price is missing simply
+            # isn't filled today and remains pending. Log it so it's auditable.
+            logger.warning("Backtest %s: isolated price gap for %s — carrying "
+                           "forward / deferring, not aborting.", snapshot_date, missing)
 
     for i, agent_id in enumerate(agent_ids):
         # Apply jitter between agents (configurable; unneeded on a paid tier).
