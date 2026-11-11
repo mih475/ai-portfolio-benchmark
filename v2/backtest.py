@@ -152,9 +152,13 @@ def run_backtest(start_iso: str, end_iso: str, agent_ids=None):
     if failures:
         logger.warning(f"{failures}/{len(dates)} day(s) errored during the backtest.")
 
-    # Write a SPY buy-and-hold benchmark row for the same window so the
-    # leaderboard answers "beat the market?" not just "beat the random control?".
+    # Write buy-and-hold benchmark rows for the same window. SPY (large-cap) is
+    # the headline "beat the market?" line; IWM (Russell 2000) is the honest
+    # like-for-like benchmark, since the agents trade a $3-$50 small-cap universe
+    # and much of any "edge" vs SPY is just small-cap beta.
     from .config import PORTFOLIOS_DIR, STARTING_CAPITAL
     write_benchmark(start_iso, end_iso, PORTFOLIOS_DIR, ticker="SPY",
+                    capital=STARTING_CAPITAL)
+    write_benchmark(start_iso, end_iso, PORTFOLIOS_DIR, ticker="IWM",
                     capital=STARTING_CAPITAL)
     logger.info("=== BACKTEST COMPLETE ===")
