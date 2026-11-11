@@ -1,25 +1,26 @@
 {
   "agent_id": "claude_aggressive",
-  "cash": 10000.0,
+  "cash": 9000.0,
   "starting_capital": 10000.0,
   "peak_value": 10000.0,
-  "max_drawdown": 0.0,
-  "last_value": 10000.0,
-  "positions": {},
-  "pending_orders": [
-    {
-      "action": "BUY",
+  "max_drawdown": 0.000615,
+  "last_value": 9993.85,
+  "positions": {
+    "CELH": {
       "ticker": "CELH",
-      "allocation_pct": 10,
-      "order_type": "MARKET",
-      "limit_price": null,
-      "stop_loss_pct": 8,
-      "take_profit_pct": 25,
-      "reason": "Only name in the set with price above both 20d and 50d SMA, RSI 68 (not overbought), 20d volume strong and a 2-day breakout on heavy volume. Stop -8% per standard momentum rule.",
-      "submitted_date": "2026-11-09"
+      "shares": 30.300276,
+      "entry_price": 33.003,
+      "entry_date": "2026-11-10",
+      "stop_loss_price": 30.3628,
+      "take_profit_price": 41.2537,
+      "current_price": 32.79999923706055,
+      "unrealized_pnl": -6.150979145276004,
+      "unrealized_pnl_pct": -0.0061509790909751606
     }
-  ],
+  },
+  "pending_orders": [],
   "daily_returns": [
-    0.0
+    0.0,
+    -0.000615
   ]
 }

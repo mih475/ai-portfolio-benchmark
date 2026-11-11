@@ -46,5 +46,62 @@
       "value": 10000.0,
       "cum_ret": 0.0
     }
+  },
+  {
+    "date": "2026-11-10",
+    "agents": {
+      "claude_aggressive": {
+        "value": 9993.85,
+        "day_ret": -0.000615,
+        "cum_ret": -0.000615,
+        "cash_pct": 90.1,
+        "n_positions": 1,
+        "positions": [
+          "CELH"
+        ],
+        "max_drawdown": 0.000615,
+        "fills_today": [
+          {
+            "action": "BUY",
+            "ticker": "CELH",
+            "shares": 30.3003,
+            "price": 33.003,
+            "trigger": "AGENT"
+          }
+        ],
+        "pending_next_open": []
+      },
+      "random_control": {
+        "value": 10000.0,
+        "day_ret": 0.0,
+        "cum_ret": 0.0,
+        "cash_pct": 100.0,
+        "n_positions": 0,
+        "positions": [],
+        "max_drawdown": 0.0,
+        "fills_today": [],
+        "pending_next_open": [
+          {
+            "action": "BUY",
+            "ticker": "PENN",
+            "allocation_pct": 12.08
+          },
+          {
+            "action": "BUY",
+            "ticker": "ARWR",
+            "allocation_pct": 10.73
+          },
+          {
+            "action": "BUY",
+            "ticker": "HPQ",
+            "allocation_pct": 14.95
+          }
+        ]
+      }
+    },
+    "spy": {
+      "value": 9963.2,
+      "cum_ret": -0.00368
+    }
   }
 ]
