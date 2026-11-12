@@ -61,3 +61,6 @@ jobs:
 
       - name: Run strict-price gap classifier test
         run: python3 v2/tests/test_strict_gap.py
+
+      - name: Verify ChatGPT-v2 strict historical trade compliance (offline)
+        run: python3 v2/tests/test_historical_compliance.py
