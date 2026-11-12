@@ -241,8 +241,18 @@ def run_agent(agent_id: str, snapshot: dict, simulator: PortfolioSimulator,
             trades = trades_data.get("trades", [])
             logger.info(f"{agent_id} proposed: {len(trades)} trades.")
             
-            # Submit to simulator
-            simulator.submit_orders(trades, snapshot["metadata"]["date"])
+            # The frozen ChatGPT v2.0 strict historical BUY policy is checked
+            # by the simulator against THIS session's snapshot (not by the LLM).
+            # Other agents and live paper keep their original submission path.
+            if strict_backtest and agent_id == "chatgpt_aggressive":
+                decision_results = simulator.submit_orders(
+                    trades, current_date, market_snapshot=snapshot)
+            else:
+                decision_results = simulator.submit_orders(trades, current_date)
+            rejected = [r for r in decision_results if r.get("status") == "REJECTED"]
+            if rejected:
+                logger.warning("%s on %s: %d/%d proposals rejected by simulator",
+                               agent_id, current_date, len(rejected), len(decision_results))
             
         except json.JSONDecodeError:
             logger.error(f"{agent_id} returned invalid JSON: {result_json}")
