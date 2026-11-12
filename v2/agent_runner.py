@@ -125,6 +125,12 @@ def run_agent(agent_id: str, snapshot: dict, simulator: PortfolioSimulator,
         return
 
     agent = AGENTS[agent_id]
+    if (agent_id == "chatgpt_aggressive"
+            and os.getenv("BACKTEST_STRICT_PRICES") == "1"):
+        view = snapshot.get("chatgpt_strict_view")
+        if not isinstance(view, dict):
+            raise ValueError("Missing strict ChatGPT-only historical market view")
+        snapshot = {**snapshot, **view}
 
     # 1. Simulator pre-LLM checks (T+1 execution of yesterday's trades, check stops)
     current_date = snapshot["metadata"]["date"]
