@@ -181,9 +181,11 @@ def t_atr_stop_over_12_or_insufficient_cash_fails():
     ss["watchlist"] = [row(ATR_Pct=9)]
     assert p.submit_orders([buy(stop=13.5, target=35)], "2024-03-04",
                            market_snapshot=ss)[0]["status"] == "REJECTED"
+    # Cash must be evaluated relative to current equity, not starting capital:
+    # with $100 total equity, a valid 10% allocation costs only $10.
     p.cash = 100
     assert p.submit_orders([buy()], "2024-03-04",
-                           market_snapshot=snap())[0]["status"] == "REJECTED"
+                           market_snapshot=snap())[0]["status"] == "ACCEPTED"
 
 @test
 @strict
