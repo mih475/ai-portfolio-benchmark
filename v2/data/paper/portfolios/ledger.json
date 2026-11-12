@@ -103,5 +103,90 @@
       "value": 9963.2,
       "cum_ret": -0.00368
     }
+  },
+  {
+    "date": "2026-11-11",
+    "agents": {
+      "claude_aggressive": {
+        "value": 10001.12,
+        "day_ret": 0.000728,
+        "cum_ret": 0.000112,
+        "cash_pct": 90.0,
+        "n_positions": 1,
+        "positions": [
+          "CELH"
+        ],
+        "max_drawdown": 0.000615,
+        "fills_today": [],
+        "pending_next_open": []
+      },
+      "random_control": {
+        "value": 10016.09,
+        "day_ret": 0.001609,
+        "cum_ret": 0.001609,
+        "cash_pct": 62.1,
+        "n_positions": 3,
+        "positions": [
+          "ARWR",
+          "HPQ",
+          "PENN"
+        ],
+        "max_drawdown": 0.0,
+        "fills_today": [
+          {
+            "action": "BUY",
+            "ticker": "PENN",
+            "shares": 66.3073,
+            "price": 18.2182,
+            "trigger": "AGENT"
+          },
+          {
+            "action": "BUY",
+            "ticker": "ARWR",
+            "shares": 21.5871,
+            "price": 49.6997,
+            "trigger": "AGENT"
+          },
+          {
+            "action": "BUY",
+            "ticker": "HPQ",
+            "shares": 52.5763,
+            "price": 28.4284,
+            "trigger": "AGENT"
+          }
+        ],
+        "pending_next_open": [
+          {
+            "action": "SELL",
+            "ticker": "ARWR",
+            "allocation_pct": 100
+          },
+          {
+            "action": "SELL",
+            "ticker": "HPQ",
+            "allocation_pct": 100
+          },
+          {
+            "action": "BUY",
+            "ticker": "S",
+            "allocation_pct": 14.79
+          },
+          {
+            "action": "BUY",
+            "ticker": "CRSP",
+            "allocation_pct": 11.02
+          },
+          {
+            "action": "BUY",
+            "ticker": "FSLY",
+            "allocation_pct": 6.21
+          }
+        ]
+      }
+    },
+    "spy": {
+      "value": 10094.59,
+      "cum_ret": 0.009459
+    }
   }
 ]

@@ -1,6 +1,6 @@
 [
   {
-    "date": "2026-11-10",
+    "date": "2026-11-11",
     "cash": 9000.0,
     "positions": {
       "CELH": {
@@ -10,28 +10,14 @@
         "entry_date": "2026-11-10",
         "stop_loss_price": 30.3628,
         "take_profit_price": 41.2537,
-        "current_price": 32.79999923706055,
-        "unrealized_pnl": -6.150979145276004,
-        "unrealized_pnl_pct": -0.0061509790909751606
+        "current_price": 33.040000915527344,
+        "unrealized_pnl": 1.1211379527311978,
+        "unrealized_pnl_pct": 0.0011211379428337919
       }
     },
-    "portfolio_value": 9993.85,
-    "daily_return": -0.000615,
-    "cumulative_return": -0.000615,
-    "transactions_today": [
-      {
-        "date": "2026-11-10",
-        "action": "BUY",
-        "ticker": "CELH",
-        "shares": 30.300276,
-        "price": 33.003,
-        "total": 1000.0,
-        "stop_loss": 30.3628,
-        "take_profit": 41.2537,
-        "reason": "Only name in the set with price above both 20d and 50d SMA, RSI 68 (not overbought), 20d volume strong and a 2-day breakout on heavy volume. Stop -8% per standard momentum rule.",
-        "trigger": "AGENT",
-        "order_type": "MARKET"
-      }
-    ]
+    "portfolio_value": 10001.12,
+    "daily_return": 0.000728,
+    "cumulative_return": 0.000112,
+    "transactions_today": []
   }
 ]

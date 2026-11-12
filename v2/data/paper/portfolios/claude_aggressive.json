@@ -2,9 +2,9 @@
   "agent_id": "claude_aggressive",
   "cash": 9000.0,
   "starting_capital": 10000.0,
-  "peak_value": 10000.0,
+  "peak_value": 10001.12,
   "max_drawdown": 0.000615,
-  "last_value": 9993.85,
+  "last_value": 10001.12,
   "positions": {
     "CELH": {
       "ticker": "CELH",
@@ -13,14 +13,15 @@
       "entry_date": "2026-11-10",
       "stop_loss_price": 30.3628,
       "take_profit_price": 41.2537,
-      "current_price": 32.79999923706055,
-      "unrealized_pnl": -6.150979145276004,
-      "unrealized_pnl_pct": -0.0061509790909751606
+      "current_price": 33.040000915527344,
+      "unrealized_pnl": 1.1211379527311978,
+      "unrealized_pnl_pct": 0.0011211379428337919
     }
   },
   "pending_orders": [],
   "daily_returns": [
     0.0,
-    -0.000615
+    -0.000615,
+    0.000728
   ]
 }
