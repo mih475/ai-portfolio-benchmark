@@ -482,7 +482,7 @@ def compute_technicals(tickers: List[str], as_of: Optional[date] = None) -> Dict
                 logger.warning("No SPY price history: relative strength unavailable")
 
         tech_data = {}
-        for ticker in tickers:
+        for ticker in (list(dict.fromkeys([*tickers, "SPY"])) if strict else tickers):
             try:
                 hist = data.iloc[:, data.columns.get_level_values(1) == ticker]
                 # Flatten the multi-index for this ticker
@@ -567,6 +567,7 @@ def compute_technicals(tickers: List[str], as_of: Optional[date] = None) -> Dict
                 )
                 
                 tech_data[ticker] = {
+                    "AsOf_Close": round(cur_price, 2),
                     "ATR_Pct": round(float(atr_pct), 2),
                     "RVOL_Z": round(float(rvol_z), 2),
                     "RSI": round(float(rsi), 1),
@@ -674,6 +675,12 @@ def build_mih_snapshot(snapshot_date: Optional[date] = None, save_dir: Optional[
     # a true survivorship-free dataset is a separate requirement.
     champions = [] if strict_history else fetch_dynamic_sector_champions(rotation)
     universe = list(dict.fromkeys([*universe, *champions]))
+    if strict_history:
+        from .historical_compliance import approved_equity
+        before = len(universe)
+        universe = [t for t in universe if approved_equity(t)]
+        logger.info("Historical stock-only approvals: %d/%d symbols",
+                    len(universe), before)
 
     watchlist_raw = fetch_watchlist_data(universe, as_of=as_of)
 
@@ -706,6 +713,21 @@ def build_mih_snapshot(snapshot_date: Optional[date] = None, save_dir: Optional[
             watchlist_raw = df.to_dict("records")
     except: pass
 
+    # Source-of-truth as-of regime gate for the strict ChatGPT historical
+    # BUY firewall. No present-day asset metadata or future news is used.
+    regime_context = {}
+    if strict_history:
+        spy_metrics = technicals.get("SPY", {})
+        vix_record = (macro.get("raw", {}).get("indicators", {}).get("VIXCLS", {})
+                      if isinstance(macro.get("raw"), dict) else {})
+        regime_context = {
+            "date": as_of.isoformat(),
+            "spy_close": spy_metrics.get("AsOf_Close"),
+            "spy_sma200_dist_pct": spy_metrics.get("SMA_200_Dist"),
+            "vix": vix_record.get("value"),
+            "vix_date": vix_record.get("date"),
+        }
+
     # 5. Serialization (TOON)
     toon_content = format_as_toon(watchlist_raw, rotation)
     
@@ -725,6 +747,7 @@ def build_mih_snapshot(snapshot_date: Optional[date] = None, save_dir: Optional[
         # Exposed so the simulator/runner can source fill & mark prices without
         # re-parsing the TOON prompt payload. See agent_runner.run_agent().
         "watchlist": watchlist_raw,
+        "regime_context": regime_context,
         "module_1_macro": {
             "narrative": narrative,
             "indicators": macro
