@@ -153,6 +153,51 @@ def test_historical_snapshot_fails_closed_on_missing_sector_history():
             os.environ["BACKTEST_STRICT_PRICES"] = old
 
 
+def test_chatgpt_view_filters_geared_funds_without_changing_shared_universe():
+    old = os.environ.get("BACKTEST_STRICT_PRICES")
+    os.environ["BACKTEST_STRICT_PRICES"] = "1"
+    try:
+        equities = [
+            {"Tkr": "PLTR", "Price": 20.0, "Vol_Avg": 1000000},
+            {"Tkr": "TNA", "Price": 30.0, "Vol_Avg": 1000000},
+        ]
+        technicals = {
+            k: {"SMA_200_Dist": 5, "RS_3M_vs_SPY": 2, "ATR_Pct": 4,
+                "AsOf_Close": 20, "SMA_20_Dist": 3, "SMA_50_Dist": 2,
+                "RS_1M_vs_SPY": 2, "RSI": 60, "RVOL_Z": 1}
+            for k in ("PLTR", "TNA")
+        }
+        technicals["SPY"] = {
+            "AsOf_Close": 500.0, "SMA_200_Dist": 3.0}
+        macro = {"summary": "as-of VIX", "raw": {
+            "indicators": {"VIXCLS": {"value": 17.5, "date": "2024-03-04"}}}}
+        with patch.object(engine, "fetch_macro_data", return_value=macro), \
+             patch.object(engine, "fetch_sector_rotation", return_value={}), \
+             patch.object(engine, "fetch_watchlist_universe",
+                          return_value=["PLTR", "TNA"]), \
+             patch.object(engine, "fetch_watchlist_data",
+                          return_value=equities), \
+             patch.object(engine, "compute_technicals",
+                          return_value=technicals), \
+             patch.object(engine, "is_market_day", return_value=True):
+            out = engine.build_mih_snapshot(snapshot_date=date(2024, 3, 4))
+        assert {r["Tkr"] for r in out["watchlist"]} == {"PLTR", "TNA"}
+        view = out["chatgpt_strict_view"]
+        assert [r["Tkr"] for r in view["watchlist"]] == ["PLTR"], view
+        assert "| TNA |" in out["mih_prompt_payload"]
+        assert "| TNA |" not in view["mih_prompt_payload"]
+        assert "| PLTR |" in view["mih_prompt_payload"]
+        assert out["regime_context"] == {
+            "date": "2024-03-04", "spy_close": 500.0,
+            "spy_sma200_dist_pct": 3.0,
+            "vix": 17.5, "vix_date": "2024-03-04"}
+    finally:
+        if old is None:
+            os.environ.pop("BACKTEST_STRICT_PRICES", None)
+        else:
+            os.environ["BACKTEST_STRICT_PRICES"] = old
+
+
 def main():
     tests = [
         t_historical_candidate_filters_missing_or_nonfinite_indicators,
@@ -160,6 +205,7 @@ def main():
         test_unrecoverable_sector_missing_is_reported_not_fabricated,
         test_historical_watchlist_excludes_ipo_with_no_asof_bar,
         test_historical_snapshot_fails_closed_on_missing_sector_history,
+        test_chatgpt_view_filters_geared_funds_without_changing_shared_universe,
     ]
     for test in tests:
         test()

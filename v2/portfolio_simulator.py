@@ -293,6 +293,17 @@ class PortfolioSimulator:
 
         for order in self.pending_orders:
             ticker = order.ticker
+            if (self.agent_id == "chatgpt_aggressive"
+                    and os.getenv("BACKTEST_STRICT_PRICES") == "1"
+                    and order.action == TradeAction.BUY):
+                try:
+                    from .historical_compliance import approved_equity
+                except ImportError:  # stdlib-only simulator is tested as a top-level file
+                    from historical_compliance import approved_equity
+                if not approved_equity(ticker):
+                    logger.warning("[%s] Strict compliance cancelled queued BUY for unapproved %s",
+                                   self.agent_id, ticker)
+                    continue
             if ticker not in open_prices:
                 if os.getenv("BACKTEST_STRICT_PRICES") == "1":
                     raise ValueError(f"Missing exact-session opening fill for {ticker} on {today}")
@@ -437,7 +448,8 @@ class PortfolioSimulator:
     # Step 3: Submit New Orders (Validate)
     # ─────────────────────────────────────
 
-    def submit_orders(self, proposed_trades: list[dict], today: str) -> list[dict]:
+    def submit_orders(self, proposed_trades: list[dict], today: str,
+                      market_snapshot: dict | None = None) -> list[dict]:
         """
         Validate proposed trades from the LLM and queue valid ones as pending orders.
         This is the validation firewall — Code is Law.
@@ -473,6 +485,23 @@ class PortfolioSimulator:
             if not ticker or len(ticker) > 5:
                 results.append({"trade": trade, "status": "REJECTED", "reason": f"Invalid ticker: {ticker}"})
                 continue
+
+            # Only ChatGPT-v2 strict historical BUYs are subject to the
+            # frozen playbook's independently enforced instrument/entry rules.
+            # Other agents, live paper, and SELL exits retain existing logic.
+            if (action == "BUY" and self.agent_id == "chatgpt_aggressive"
+                    and os.getenv("BACKTEST_STRICT_PRICES") == "1"):
+                try:
+                    from .historical_compliance import buy_rejection
+                except ImportError:  # direct-module stdlib regression harness
+                    from historical_compliance import buy_rejection
+                objection = buy_rejection(trade, market_snapshot, self, today)
+                if objection is not None:
+                    results.append({"trade": trade, "status": "REJECTED",
+                                    "reason": objection})
+                    logger.warning("[%s] COMPLIANCE REJECTED BUY %s on %s: %s",
+                                   self.agent_id, ticker, today, objection)
+                    continue
 
             # 3. Allocation bounds
             if action == "BUY":
