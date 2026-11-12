@@ -202,6 +202,45 @@ def t_duplicate_and_capped_exposure():
                            market_snapshot=snap())[0]["status"] == "REJECTED"
 
 @test
+@strict
+def t_at_most_two_new_buys_and_eight_positions():
+    p = sim()
+    ss = snap()
+    ss["watchlist"] = [row(k) for k in ("PLTR", "DKNG", "SOFI")]
+    proposals = [buy(k, allocation=5) for k in ("PLTR", "DKNG", "SOFI")]
+    outcome = p.submit_orders(proposals, "2024-03-04", market_snapshot=ss)
+    assert [x["status"] for x in outcome] == ["ACCEPTED", "ACCEPTED", "REJECTED"], outcome
+    assert len(p.pending_orders) == 2
+    p = sim()
+    for i in range(8):
+        p.positions[f"P{i}"] = Position(f"P{i}", 1, 20, "2024-03-01",
+                                         18, current_price=20)
+    assert p.submit_orders([buy()], "2024-03-04",
+                           market_snapshot=snap())[0]["status"] == "REJECTED"
+
+
+@test
+@strict
+def t_total_exposure_and_aggregate_stop_risk_rejected():
+    # 80% already invested leaves only 5% room under the risk-on 85% ceiling.
+    p = sim()
+    p.positions["OLD"] = Position("OLD", 800, 10, "2024-03-01",
+                                  9.5, current_price=10)
+    p.cash = 2000
+    outcome = p.submit_orders([buy(allocation=10)], "2024-03-04",
+                              market_snapshot=snap())
+    assert "exposure" in outcome[0]["reason"], outcome
+
+    # 2.88% stop exposure on an existing holding + 0.6% new risk >3% total.
+    p = sim()
+    p.positions["OLD"] = Position("OLD", 400, 10, "2024-03-01",
+                                  9.28, current_price=10)
+    p.cash = 6000
+    outcome = p.submit_orders([buy()], "2024-03-04", market_snapshot=snap())
+    assert "stop-risk" in outcome[0]["reason"], outcome
+
+
+@test
 def t_claude_and_live_chatgpt_paths_unchanged():
     old = os.environ.get("BACKTEST_STRICT_PRICES")
     try:
