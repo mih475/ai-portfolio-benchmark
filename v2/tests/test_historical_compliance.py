@@ -30,7 +30,7 @@ def sim(agent="chatgpt_aggressive"):
     return PortfolioSimulator(agent, 10000, rules(), Path(tempfile.mkdtemp()))
 
 def row(ticker="PLTR", **kw):
-    base = dict(Tkr=ticker, Price=20.0, SMA_20_Dist=4.0, SMA_50_Dist=2.0,
+    base = dict(Tkr=ticker, Price=20.0, SMA_20_Dist=2.0, SMA_50_Dist=4.0,
                 RS_1M_vs_SPY=4.0, RSI=60.0, RVOL_Z=0.8,
                 ATR_Pct=4.0)
     base.update(kw)
@@ -143,7 +143,7 @@ def t_regime_gate_blocks_risk_off_unknown_stale_future():
 def t_trend_relative_strength_volume_rsi_and_missing_data():
     variants = (
         {"SMA_20_Dist": -2}, {"SMA_50_Dist": -1},
-        {"SMA_20_Dist": 1}, {"RS_1M_vs_SPY": -0.1},
+        {"SMA_20_Dist": 5}, {"RS_1M_vs_SPY": -0.1},
         {"RSI": 75}, {"RSI": 40}, {"RVOL_Z": -0.5},
         {"RVOL_Z": None}, {"ATR_Pct": float("nan")}, {"Price": 55},
     )
@@ -155,6 +155,27 @@ def t_trend_relative_strength_volume_rsi_and_missing_data():
         assert o[0]["status"] == "REJECTED", (kw,o)
     assert sim().submit_orders([buy()], "2024-03-04",
                                market_snapshot=snap())[0]["status"] == "ACCEPTED"
+
+@test
+@strict
+def t_sma20_above_sma50_is_bullish_not_reversed():
+    """Price/SMA percent distances reverse ordering of SMA levels."""
+    # Price $20; $19 SMA20 > $18 SMA50 => d20 5.26% < d50 11.11%.
+    p = sim()
+    context = snap()
+    context["watchlist"] = [row(SMA_20_Dist=round((20/19 - 1)*100, 1),
+                                SMA_50_Dist=round((20/18 - 1)*100, 1))]
+    result = p.submit_orders([buy()], "2024-03-04", market_snapshot=context)
+    assert result[0]["status"] == "ACCEPTED", result
+
+    # Price above BOTH SMAs but fast SMA20 below SMA50 is not bullish.
+    p = sim()
+    context["watchlist"] = [row(SMA_20_Dist=round((20/18 - 1)*100, 1),
+                                SMA_50_Dist=round((20/19 - 1)*100, 1))]
+    result = p.submit_orders([buy()], "2024-03-04", market_snapshot=context)
+    assert result[0]["status"] == "REJECTED", result
+    assert "trend" in result[0]["reason"], result
+
 
 @test
 @strict

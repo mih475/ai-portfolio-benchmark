@@ -103,8 +103,11 @@ def buy_rejection(trade, snapshot, simulator, today, accepted_buys=0):
     price, d20, d50, rs, rsi, rvol, atr = (row[k] for k in fields)
     if not (3 <= price <= 50):
         return f"{ticker}: outside price universe"
-    # Since both distances use same positive price, d20>d50 iff SMA20>SMA50.
-    if d20 <= 0 or d50 <= 0 or d20 <= d50:
+    # With distances defined as (price / SMA - 1) * 100, a HIGHER SMA
+    # produces a SMALLER positive distance. Thus a bullish SMA20 > SMA50
+    # implies 0 < d20 < d50, not d20 > d50. This must agree with the
+    # frozen playbook and cannot be inferred from the distance names alone.
+    if d20 <= 0 or d50 <= 0 or d20 >= d50:
         return f"{ticker}: price/SMA20/SMA50 trend check failed"
     if rs <= 0:
         return f"{ticker}: positive one-month SPY relative strength not confirmed"
