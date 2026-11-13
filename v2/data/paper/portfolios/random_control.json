@@ -1,10 +1,10 @@
 {
   "agent_id": "random_control",
-  "cash": 6224.47,
+  "cash": NaN,
   "starting_capital": 10000.0,
   "peak_value": 10016.09,
   "max_drawdown": 0.0,
-  "last_value": 10016.09,
+  "last_value": NaN,
   "positions": {
     "PENN": {
       "ticker": "PENN",
@@ -13,93 +13,16 @@
       "entry_date": "2026-11-11",
       "stop_loss_price": 16.9794,
       "take_profit_price": null,
-      "current_price": 18.149999618530273,
-      "unrealized_pnl": -4.522184450034816,
-      "unrealized_pnl_pct": -0.003743530176950855
-    },
-    "ARWR": {
-      "ticker": "ARWR",
-      "shares": 21.587062,
-      "entry_price": 49.6997,
-      "entry_date": "2026-11-11",
-      "stop_loss_price": 48.1093,
-      "take_profit_price": null,
-      "current_price": 49.36000061035156,
-      "unrealized_pnl": -7.333111785702978,
-      "unrealized_pnl_pct": -0.00683503903742754
-    },
-    "HPQ": {
-      "ticker": "HPQ",
-      "shares": 52.576269,
-      "entry_price": 28.4284,
-      "entry_date": "2026-11-11",
-      "stop_loss_price": 27.4903,
-      "take_profit_price": null,
-      "current_price": 28.959999084472656,
-      "unrealized_pnl": 27.949496465388105,
-      "unrealized_pnl_pct": 0.0186995780442324
+      "current_price": NaN,
+      "unrealized_pnl": NaN,
+      "unrealized_pnl_pct": NaN
     }
   },
-  "pending_orders": [
-    {
-      "action": "SELL",
-      "ticker": "ARWR",
-      "allocation_pct": 100,
-      "order_type": "MARKET",
-      "limit_price": null,
-      "stop_loss_pct": 10,
-      "take_profit_pct": null,
-      "reason": "Random control sell decision.",
-      "submitted_date": "2026-11-11"
-    },
-    {
-      "action": "SELL",
-      "ticker": "HPQ",
-      "allocation_pct": 100,
-      "order_type": "MARKET",
-      "limit_price": null,
-      "stop_loss_pct": 10,
-      "take_profit_pct": null,
-      "reason": "Random control sell decision.",
-      "submitted_date": "2026-11-11"
-    },
-    {
-      "action": "BUY",
-      "ticker": "S",
-      "allocation_pct": 14.79,
-      "order_type": "MARKET",
-      "limit_price": null,
-      "stop_loss_pct": 13.6,
-      "take_profit_pct": 17.8,
-      "reason": "Randomly selected from liquid universe.",
-      "submitted_date": "2026-11-11"
-    },
-    {
-      "action": "BUY",
-      "ticker": "CRSP",
-      "allocation_pct": 11.02,
-      "order_type": "MARKET",
-      "limit_price": null,
-      "stop_loss_pct": 6.7,
-      "take_profit_pct": 42.0,
-      "reason": "Randomly selected from liquid universe.",
-      "submitted_date": "2026-11-11"
-    },
-    {
-      "action": "BUY",
-      "ticker": "FSLY",
-      "allocation_pct": 6.21,
-      "order_type": "MARKET",
-      "limit_price": null,
-      "stop_loss_pct": 13.7,
-      "take_profit_pct": null,
-      "reason": "Randomly selected from liquid universe.",
-      "submitted_date": "2026-11-11"
-    }
-  ],
+  "pending_orders": [],
   "daily_returns": [
     0.0,
     0.0,
-    0.001609
+    0.001609,
+    NaN
   ]
 }

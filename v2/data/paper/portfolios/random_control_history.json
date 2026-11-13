@@ -1,7 +1,7 @@
 [
   {
-    "date": "2026-11-11",
-    "cash": 6224.47,
+    "date": "2026-11-12",
+    "cash": NaN,
     "positions": {
       "PENN": {
         "ticker": "PENN",
@@ -10,73 +10,38 @@
         "entry_date": "2026-11-11",
         "stop_loss_price": 16.9794,
         "take_profit_price": null,
-        "current_price": 18.149999618530273,
-        "unrealized_pnl": -4.522184450034816,
-        "unrealized_pnl_pct": -0.003743530176950855
-      },
-      "ARWR": {
-        "ticker": "ARWR",
-        "shares": 21.587062,
-        "entry_price": 49.6997,
-        "entry_date": "2026-11-11",
-        "stop_loss_price": 48.1093,
-        "take_profit_price": null,
-        "current_price": 49.36000061035156,
-        "unrealized_pnl": -7.333111785702978,
-        "unrealized_pnl_pct": -0.00683503903742754
-      },
-      "HPQ": {
-        "ticker": "HPQ",
-        "shares": 52.576269,
-        "entry_price": 28.4284,
-        "entry_date": "2026-11-11",
-        "stop_loss_price": 27.4903,
-        "take_profit_price": null,
-        "current_price": 28.959999084472656,
-        "unrealized_pnl": 27.949496465388105,
-        "unrealized_pnl_pct": 0.0186995780442324
+        "current_price": NaN,
+        "unrealized_pnl": NaN,
+        "unrealized_pnl_pct": NaN
       }
     },
-    "portfolio_value": 10016.09,
-    "daily_return": 0.001609,
-    "cumulative_return": 0.001609,
+    "portfolio_value": NaN,
+    "daily_return": NaN,
+    "cumulative_return": NaN,
     "transactions_today": [
       {
-        "date": "2026-11-11",
-        "action": "BUY",
-        "ticker": "PENN",
-        "shares": 66.307319,
-        "price": 18.2182,
-        "total": 1208.0,
-        "stop_loss": 16.9794,
-        "take_profit": null,
-        "reason": "Randomly selected from liquid universe.",
-        "trigger": "AGENT",
-        "order_type": "MARKET"
-      },
-      {
-        "date": "2026-11-11",
-        "action": "BUY",
+        "date": "2026-11-12",
+        "action": "SELL",
         "ticker": "ARWR",
         "shares": 21.587062,
-        "price": 49.6997,
-        "total": 1072.87,
-        "stop_loss": 48.1093,
+        "price": NaN,
+        "total": NaN,
+        "stop_loss": null,
         "take_profit": null,
-        "reason": "Randomly selected from liquid universe.",
+        "reason": "Random control sell decision.",
         "trigger": "AGENT",
         "order_type": "MARKET"
       },
       {
-        "date": "2026-11-11",
-        "action": "BUY",
+        "date": "2026-11-12",
+        "action": "SELL",
         "ticker": "HPQ",
         "shares": 52.576269,
-        "price": 28.4284,
-        "total": 1494.66,
-        "stop_loss": 27.4903,
+        "price": NaN,
+        "total": NaN,
+        "stop_loss": null,
         "take_profit": null,
-        "reason": "Randomly selected from liquid universe.",
+        "reason": "Random control sell decision.",
         "trigger": "AGENT",
         "order_type": "MARKET"
       }

@@ -188,5 +188,55 @@
       "value": 10094.59,
       "cum_ret": 0.009459
     }
+  },
+  {
+    "date": "2026-11-12",
+    "agents": {
+      "claude_aggressive": {
+        "value": NaN,
+        "day_ret": NaN,
+        "cum_ret": NaN,
+        "cash_pct": NaN,
+        "n_positions": 1,
+        "positions": [
+          "CELH"
+        ],
+        "max_drawdown": 0.000615,
+        "fills_today": [],
+        "pending_next_open": []
+      },
+      "random_control": {
+        "value": NaN,
+        "day_ret": NaN,
+        "cum_ret": NaN,
+        "cash_pct": NaN,
+        "n_positions": 1,
+        "positions": [
+          "PENN"
+        ],
+        "max_drawdown": 0.0,
+        "fills_today": [
+          {
+            "action": "SELL",
+            "ticker": "ARWR",
+            "shares": 21.5871,
+            "price": NaN,
+            "trigger": "AGENT"
+          },
+          {
+            "action": "SELL",
+            "ticker": "HPQ",
+            "shares": 52.5763,
+            "price": NaN,
+            "trigger": "AGENT"
+          }
+        ],
+        "pending_next_open": []
+      }
+    },
+    "spy": {
+      "value": 10094.59,
+      "cum_ret": 0.009459
+    }
   }
 ]
