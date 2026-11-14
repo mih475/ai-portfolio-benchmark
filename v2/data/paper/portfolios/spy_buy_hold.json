@@ -1,11 +1,13 @@
 {
   "agent_id": "spy_buy_hold",
   "starting_capital": 10000.0,
-  "cash": 10094.59,
+  "cash": 10022.32,
   "positions": {},
-  "max_drawdown": 0.003680159856335558,
+  "max_drawdown": 0.007159687894191922,
   "daily_returns": [
     -0.00368,
-    0.013188
+    0.013188,
+    -0.00354,
+    -0.003632
   ]
 }

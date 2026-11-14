@@ -3,8 +3,8 @@
   "cash": 9000.0,
   "starting_capital": 10000.0,
   "peak_value": 10001.12,
-  "max_drawdown": 0.000615,
-  "last_value": NaN,
+  "max_drawdown": 0.001878,
+  "last_value": 9982.33,
   "positions": {
     "CELH": {
       "ticker": "CELH",
@@ -13,9 +13,9 @@
       "entry_date": "2026-11-10",
       "stop_loss_price": 30.3628,
       "take_profit_price": 41.2537,
-      "current_price": NaN,
-      "unrealized_pnl": NaN,
-      "unrealized_pnl_pct": NaN
+      "current_price": 32.41999816894531,
+      "unrealized_pnl": -17.665116389462405,
+      "unrealized_pnl_pct": -0.01766511623351476
     }
   },
   "pending_orders": [],
@@ -23,6 +23,7 @@
     0.0,
     -0.000615,
     0.000728,
-    NaN
+    NaN,
+    0
   ]
 }

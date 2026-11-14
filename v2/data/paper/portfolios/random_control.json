@@ -13,9 +13,9 @@
       "entry_date": "2026-11-11",
       "stop_loss_price": 16.9794,
       "take_profit_price": null,
-      "current_price": NaN,
-      "unrealized_pnl": NaN,
-      "unrealized_pnl_pct": NaN
+      "current_price": 17.5,
+      "unrealized_pnl": -47.62191650579997,
+      "unrealized_pnl_pct": -0.03942211634519324
     }
   },
   "pending_orders": [],
@@ -23,6 +23,7 @@
     0.0,
     0.0,
     0.001609,
-    NaN
+    NaN,
+    0
   ]
 }

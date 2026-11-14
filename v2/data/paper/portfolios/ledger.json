@@ -238,5 +238,40 @@
       "value": 10094.59,
       "cum_ret": 0.009459
     }
+  },
+  {
+    "date": "2026-11-13",
+    "agents": {
+      "claude_aggressive": {
+        "value": 9982.33,
+        "day_ret": 0.0,
+        "cum_ret": -0.001767,
+        "cash_pct": 90.2,
+        "n_positions": 1,
+        "positions": [
+          "CELH"
+        ],
+        "max_drawdown": 0.001878,
+        "fills_today": [],
+        "pending_next_open": []
+      },
+      "random_control": {
+        "value": NaN,
+        "day_ret": 0.0,
+        "cum_ret": NaN,
+        "cash_pct": NaN,
+        "n_positions": 1,
+        "positions": [
+          "PENN"
+        ],
+        "max_drawdown": 0.0,
+        "fills_today": [],
+        "pending_next_open": []
+      }
+    },
+    "spy": {
+      "value": 10022.32,
+      "cum_ret": 0.002232
+    }
   }
 ]

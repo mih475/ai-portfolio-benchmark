@@ -1,6 +1,6 @@
 [
   {
-    "date": "2026-11-12",
+    "date": "2026-11-13",
     "cash": NaN,
     "positions": {
       "PENN": {
@@ -10,41 +10,14 @@
         "entry_date": "2026-11-11",
         "stop_loss_price": 16.9794,
         "take_profit_price": null,
-        "current_price": NaN,
-        "unrealized_pnl": NaN,
-        "unrealized_pnl_pct": NaN
+        "current_price": 17.5,
+        "unrealized_pnl": -47.62191650579997,
+        "unrealized_pnl_pct": -0.03942211634519324
       }
     },
     "portfolio_value": NaN,
-    "daily_return": NaN,
+    "daily_return": 0,
     "cumulative_return": NaN,
-    "transactions_today": [
-      {
-        "date": "2026-11-12",
-        "action": "SELL",
-        "ticker": "ARWR",
-        "shares": 21.587062,
-        "price": NaN,
-        "total": NaN,
-        "stop_loss": null,
-        "take_profit": null,
-        "reason": "Random control sell decision.",
-        "trigger": "AGENT",
-        "order_type": "MARKET"
-      },
-      {
-        "date": "2026-11-12",
-        "action": "SELL",
-        "ticker": "HPQ",
-        "shares": 52.576269,
-        "price": NaN,
-        "total": NaN,
-        "stop_loss": null,
-        "take_profit": null,
-        "reason": "Random control sell decision.",
-        "trigger": "AGENT",
-        "order_type": "MARKET"
-      }
-    ]
+    "transactions_today": []
   }
 ]
