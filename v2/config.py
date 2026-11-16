@@ -190,9 +190,13 @@ AGENTS = {a.id: a for a in _build_agents()}
 # playbook file to spin up a new variant.
 #   • claude_robust  — ATR stops, vol-targeted sizing, earlier de-risk (defense)
 #   • claude_return  — trailing-only profits, re-entry protocol (upside capture)
+#   • claude_switch  — regime meta-agent: robust playbook when risk-on (SPY
+#     above its 200-DMA), baseline aggressive playbook when risk-off. No playbook
+#     file of its own; agent_runner picks one each day (see detect_regime).
 for _variant_id, _variant_name in [
     ("claude_robust", "Claude (Robust)"),
     ("claude_return", "Claude (Return)"),
+    ("claude_switch", "Claude (Regime Switch)"),
 ]:
     AGENTS[_variant_id] = Agent(
         id=_variant_id,

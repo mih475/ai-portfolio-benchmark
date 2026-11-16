@@ -71,6 +71,43 @@ def get_trade_tool(agent_id: str | None = None) -> dict:
         "parameters": schema
     }
 
+# ─────────────────────────────────────────────
+# Regime detection for the claude_switch meta-agent
+# ─────────────────────────────────────────────
+
+def regime_from_closes(closes, ma_window: int = 200) -> str:
+    """Pure trend filter: 'risk_on' when the latest close is at/above the
+    trailing `ma_window`-day moving average, else 'risk_off'. With too little
+    history to form the average, default to 'risk_on' (participate) — the
+    opposite default would sit in cash forever at the start of a backtest.
+    Point-in-time by construction: `closes` must end at the decision date."""
+    if not closes or len(closes) < ma_window:
+        return "risk_on"
+    ma = sum(closes[-ma_window:]) / ma_window
+    return "risk_on" if closes[-1] >= ma else "risk_off"
+
+
+def detect_regime(as_of=None, ma_window: int = 200) -> str:
+    """Risk-on/off from SPY's 200-day MA, using only closes up to `as_of`
+    (no hindsight). Any data failure falls back to 'risk_on' so the switch
+    never silently parks in cash on a fetch error."""
+    try:
+        from .price_provider import window_download
+        data = window_download(["SPY"], as_of=as_of, period="2y")
+        if data is None or getattr(data, "empty", True):
+            return "risk_on"
+        close = data["Close"]
+        if hasattr(close, "columns"):          # multi-index frame
+            close = close["SPY"]
+        if as_of is not None:
+            close = close[close.index.date <= as_of]
+        closes = [float(x) for x in close.dropna().tolist()]
+        return regime_from_closes(closes, ma_window)
+    except Exception as e:
+        logger.warning(f"regime detection failed ({e}); defaulting risk_on")
+        return "risk_on"
+
+
 def build_system_prompt(agent_config, playbook: str) -> str:
     """Build the robust system prompt combining rules, persona, and the Day 0 playbook."""
     prompt = f"YOU ARE {agent_config.display_name}.\n\n"
@@ -206,9 +243,21 @@ def run_agent(agent_id: str, snapshot: dict, simulator: PortfolioSimulator,
             execute_random_trades(simulator.get_portfolio_summary(), universe=wl_tickers)
         )
     else:
-        # Load agent's Day 0 playbook
+        # Load agent's Day 0 playbook. The claude_switch meta-agent has no
+        # playbook of its own: each day it picks, point-in-time, between the
+        # robust playbook (risk-on — participate, which won the 2021 bull) and
+        # the baseline aggressive playbook (risk-off — go to cash, which won the
+        # 2022 bear), by SPY's 200-DMA. Same model/persona/state throughout;
+        # only the instructions swap, so a flip to risk-off hands the current
+        # book to the cash-defensive playbook to wind down.
         from .config import PLAYBOOKS_DIR
-        playbook_path = PLAYBOOKS_DIR / f"{agent_id}.md"
+        pb_id = agent_id
+        if agent_id == "claude_switch":
+            regime = detect_regime(as_of=current_date)
+            pb_id = "claude_robust" if regime == "risk_on" else "claude_aggressive"
+            logger.info("[claude_switch] %s regime=%s -> %s playbook",
+                        current_date, regime, pb_id)
+        playbook_path = PLAYBOOKS_DIR / f"{pb_id}.md"
         if not playbook_path.exists():
             playbook = "Default strategy: Maximize risk-adjusted returns."
         else:
