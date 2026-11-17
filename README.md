@@ -8,18 +8,20 @@
 > are being corrected — treat the README as aspirational until `CHANGES.md` says a
 > feature is verified.
 >
-> **📊 Results & methodology: see [`FINDINGS.md`](FINDINGS.md).** Headline: over
-> 8 quarters (2024–2025) across three model families (Gemini, OpenAI, Anthropic),
-> **8 of 9 agents failed to beat SPY buy-and-hold** (+48.6% / 2yr). The only
-> exception, **Claude Haiku 5.5 (aggressive)**, is not a return-machine — its
-> bull-market edge is modest and noisy (pooled **60% beat-rate / +4.4%** over 3
-> repeats; the flashy single-run +84% didn't reproduce). Its real, *reproducible*
-> strength is **capital preservation in bear markets**: three runs of 2022 ended
-> ≈flat (−0.0 / −4.3 / −2.4%) vs SPY **−22%**, beating SPY in all 12 quarter-runs
-> with single-digit drawdowns, by going to cash — an **86% bear beat-rate that
-> did not decay**. A defensive, drawdown-averse agent (promising for income;
-> needs a forward paper-trade test), not a market-beater. Every other persona —
-> Gemini (≤40%), OpenAI (25% / 13%), Claude-balanced (13%) — trailed.
+> **📊 Results & methodology: see [`FINDINGS.md`](FINDINGS.md).** Headline: **no
+> LLM agent produced a dependable edge over passive indexing.** Across three model
+> families (2024–25) only Claude Haiku 5.5 (aggressive) stood out, and even it
+> decayed from a 71% to a pooled **60% beat-rate** over repeats. The three ways we
+> tried to *engineer* an edge all failed to the **same cause — run-to-run decision
+> noise**: the identical configuration swings 30–60 return-points between runs
+> (hand-tuned playbook variants inverted their ranking across runs; a 200-DMA
+> regime switch whipsawed and ended a bear year below both of its parts). Most
+> "wins" vs SPY were **small-cap beta** that reversed against the right benchmark
+> (**IWM**) and in the 2021 large-cap bull. The one durable, useful property: the
+> baseline agent's **bear-market capital preservation** (≈flat across ~5 runs of
+> 2022 while SPY fell 22%, by going to cash) — now in **live paper-trading** as
+> the honest arbiter. A clean negative result on "LLMs as a dependable strategy,"
+> with one narrow, real capital-preservation property worth watching.
 
 A high-fidelity project for benchmarking the financial decision-making of **18 autonomous AI agents** (6 models × 3 personas) in a deterministic, rules-based trading simulation.
 

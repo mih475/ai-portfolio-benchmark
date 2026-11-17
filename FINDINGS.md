@@ -13,48 +13,60 @@ Can an autonomous LLM trading agent **beat a passive S&P 500 buy-and-hold
 run rigorously (no look-ahead, enforced rules, a real benchmark, and enough
 data to separate skill from luck)?
 
-**Short answer: mostly no — except one agent that wins by playing defense.**
-Across three model families (Google Gemini, OpenAI, Anthropic) and nine LLM
-agents run over the same eight quarters (2024–2025), **eight of nine failed to
-beat SPY buy-and-hold** (+48.6% / ≈+22% median 1-yr). The only agent that beats
-it is **Anthropic Claude Haiku 5.5 on the *aggressive* persona** — but not as the
-return-machine it first looked like: its bull-market edge is small and noisy, and
-its real, reproducible strength is **capital preservation in down markets**.
+**Short answer: not as a dependable strategy — LLM decision noise dominates any
+edge.** We tested this three ways — more model families, hand-tuned playbook
+variants, and a regime-switching meta-agent — and every path ran into the same
+wall: **the same configuration's yearly return swings 30–60 points from one run
+to the next**, purely from the LLM's run-to-run variance, which is larger than
+any edge the tuning produced. You cannot build a dependable strategy, let alone
+an income stream, on an engine whose output is that noisy. The one genuinely
+useful property that survives is narrow: the baseline agent's **bear-market
+capital preservation** — and that is the agent now in live forward testing (§3.7).
 
-Run once, Claude-aggressive looked spectacular: +84% over two years, 71%
-bootstrap beat-rate, +11.2% median margin. But repeating the *identical* run
-three times (to separate signal from LLM run-to-run noise) showed the edge
-decaying each time — **71% → 61% → 45%** beat-rate; **+84% → +62% → +44%**
-compounded — with the third run landing *below* SPY. **Pooled across all three
-runs (1,482 day-pairs), the honest estimate is a 60% beat-rate and a +4.4% median
-margin**: a real but modest tilt, with a −21% downside tail and a ~40% chance of
-simply trailing SPY in any given year. The original 71% was the lucky draw, not
-the truth.
+The longer story, in the order we learned it:
 
-Every other agent trailed outright: Claude's own *balanced* persona (13%
-beat-rate), both OpenAI personas (`gpt-6-luna` balanced 25% / aggressive 13%),
-and all three Gemini personas (≤40%). A dart-throwing **random control** is pure
-noise — 59% beat-rate in one draw, 11–18% in two others, averaging well below SPY
-— confirming the baseline has no persistent edge (and that Claude's staying
-*above* a coin-flip across three draws is itself the signal).
+1. **Primary study (2024–2025, §3.1–3.4):** across three model families (Gemini,
+   OpenAI, Anthropic) and nine agents, eight of nine failed to beat SPY. The lone
+   exception, **Claude Haiku 5.5 aggressive**, looked spectacular on its first
+   run (+84% / 71% beat-rate) but decayed to a pooled **60% / +4.4% margin** over
+   three repeats — a modest, noisy tilt, not the market-beater it first seemed.
+2. **"Beating SPY" was mostly small-cap beta (§3.6).** The agents trade a $3–$50
+   **small-cap** universe; SPY is large-cap. Benchmarked against the honest
+   like-for-like index, **IWM (Russell 2000)**, the edge largely vanishes — and
+   in **2021**, a large-cap-led bull, **every agent trailed SPY badly** (SPY
+   +27%; best agent ~+14%; baseline actually *lost* money). So the agents never
+   beat "the market"; they were long small-caps, which sometimes wins and
+   sometimes loses to SPY by a lot.
+3. **Playbook tuning didn't help — it just moved the noise around (§3.6).** Two
+   hand-built variants (`claude_robust`: ATR stops, vol-targeting, earlier
+   de-risk; `claude_return`: trailing profits, re-entry) were **indistinguishable
+   from the baseline and from each other**: across repeated full-year runs the
+   *ranking inverted* (robust best in one 2020 run, worst in another; baseline
+   best in one, worst in another). The between-agent gap is swamped by the
+   within-agent run-to-run spread.
+4. **Regime-switching whipsawed (§3.6).** A meta-agent (`claude_switch`) that ran
+   the robust playbook when SPY was above its 200-DMA and the cash-defensive
+   baseline when below flipped correctly at the regime boundary — but **whipsawed
+   7+ times in two months** when 2022 oscillated around the average, and ended
+   the bear **worse than *either* component** (−18% vs baseline +1% / robust
+   −11%). The market-timing lag was a net cost, as predicted.
 
-**The reproducible value is downside protection, not upside alpha.** The bull
-edge is small and noisy — but the **2022 bear-market test (§3.5) is where
-Claude-aggressive is unambiguous and *stable***. Across three runs of the 2022
-bear (SPY −21.8%), it ended essentially flat each time (−0.0% / −4.3% / −2.4%),
-beat SPY in **all 12 quarter-runs**, held single-digit drawdowns against SPY's
-13–20%, and pooled to an **86% beat-rate** — by **going to cash** (54–100% cash,
-sitting out the worst quarters entirely). Unlike the bull edge, this did not
-decay on repetition.
+**The one durable, useful property.** Through all of it, the baseline
+`claude_aggressive` in a **bear market** is the most reproducible good result in
+the project: in 2022 (SPY −21.8%) it clustered near **flat** across ~five runs
+(−0.0 / −4.3 / −2.4 / +0.0 / +0.8%, with one −10% bad-draw tail), beating SPY by
+~20 points each time, by **going to cash**. That capital-preservation asymmetry —
+participate modestly up, step aside down — is real, is the drawdown-averse shape
+an income strategy would want, and is why the **live forward test runs this
+baseline agent** (§3.7). But it is still *one model, in a backtest with upward
+biases, with a noisy tail* — a promising property, not a proven income strategy.
 
-So the honest characterization of the one agent that stands out is not
-"market-beater" but **defensive, cash-timing strategy**: it gives up some upside
-in bull markets (modest, noisy ~60% edge) and sidesteps most of the downside in
-bear markets (large, *stable* ~86% edge). That asymmetry — participate modestly
-up, step aside down — is the drawdown-averse shape a usable/income strategy
-needs, and is the most promising result in this project. It remains one model,
-one bear episode, in a backtest with upward biases (§5); the single-run
-OpenAI/Gemini numbers also carry single-draw uncertainty. See §3.3–§3.5.
+**Bottom line for the practical goal (a dependable income source): no.** The
+decision variance is too large, and the three main levers to reduce it (better
+model, better playbook, regime-switching) did not work. What remains is a
+genuinely valuable **negative result** plus one narrow, real capital-preservation
+property worth watching live. See §3.6 for the tuning arc, §3.7 for the live
+test, §4 for the consolidated findings.
 
 ---
 
@@ -83,7 +95,12 @@ The original study used **Gemini 3.8 Flash** (`gemini-3.8-flash`, all three
 personas); it was later extended to two more small/fast-tier models —
 **OpenAI `gpt-6-luna`** and **Anthropic Claude Haiku 5.5** (`claude-haiku-5-5`) —
 on the balanced and aggressive personas, over the identical eight quarters, for a
-cross-model view (§3.3).
+cross-model view (§3.3). The tuning arc (§3.6) adds three Claude-Haiku variants
+sharing the same model: `claude_robust` and `claude_return` (hand-tuned
+playbooks) and `claude_switch` (a regime meta-agent that picks the robust or
+baseline playbook each day by SPY's 200-DMA). A standing playbook is just the
+agent's system prompt, so a "variant" is the same model reading different
+instructions.
 
 ### 2.3 Data
 - **Prices:** Yahoo Finance (yfinance), free.
@@ -109,8 +126,11 @@ information set** (prices + macro + technicals, no news) than a live agent
 would. This is the correct trade-off — fabricated "as-of" news would be worse.
 
 ### 2.5 Benchmarks & statistics
-- **SPY buy-and-hold** over the identical window is computed and ranked
-  alongside the agents (return, max drawdown, daily series).
+- **SPY buy-and-hold** (large-cap) over the identical window is computed and
+  ranked alongside the agents (return, max drawdown, daily series).
+- **IWM buy-and-hold** (Russell 2000, small-cap) is also written as the honest
+  *like-for-like* benchmark: the agents trade a $3–$50 small-cap universe, so
+  SPY flatters them and much of any "beat SPY" is small-cap beta (§3.6a).
 - Reported per run: return, **max drawdown**, **annualized volatility**, and
   **Sharpe** (rf=0) from the (corrected) daily-return series.
 - **"Beat SPY?"** uses a **paired bootstrap**: the same resampled days are
@@ -293,6 +313,107 @@ is still one model family, one bear episode, inside a backtest with upward biase
 
 ---
 
+### 3.6 The tuning arc — can the agent be *improved* into a dependable edge?
+
+§3.1–3.5 identified `claude_aggressive` (Claude Haiku 5.5) as the only standout.
+This section asks the follow-on question — can it be tuned into something
+dependable? — and answers it: **no.** Every lever we pulled hit the same wall,
+LLM run-to-run decision noise, which turned out to be larger than any edge.
+
+**(a) The benchmark was wrong — "beating SPY" was largely small-cap beta.**
+The agents trade a **$3–$50 small-cap** universe; SPY is large-cap. We added an
+**IWM (Russell 2000)** buy-and-hold row as the honest like-for-like benchmark.
+Against IWM the apparent edge shrinks sharply, and in **2021** — a large-cap-led
+bull — *every* agent and IWM itself **trailed SPY** badly:
+
+| 2021 (SPY +26.9%) | return |
+|---|---|
+| SPY | +26.9% |
+| claude_robust | +12–24% (noisy) |
+| IWM | +11.8% |
+| claude_aggressive | −5 to +4% |
+| random_control | +2 to −21% |
+
+So the agents were never beating "the market"; they were long small-caps, which
+beat large-cap SPY in 2020 (crash-recovery) and 2022 (bear) and lost to it in
+2021. The 2020/2022 "wins" were the universe, not skill.
+
+**(b) Two hand-tuned playbook variants were indistinguishable from the baseline.**
+`claude_robust` (ATR-based stops, volatility-targeted sizing, earlier de-risk)
+and `claude_return` (trailing-only profits, a re-entry rule) were run head-to-head
+with the baseline on identical data. On a cherry-picked 2-quarter probe, robust
+looked spectacular (+30.9% in a bull quarter); on a full held-out year it did
+not reproduce, and **repeated full-year runs inverted the ranking**:
+
+| Full-year return | 2020 run 1 | 2020 run 2 |
+|---|---|---|
+| claude_aggressive | **+79.2%** (best) | **+20.8%** (worst) |
+| claude_return | +70.1% | +31.9% |
+| claude_robust | +56.2% (worst) | **+35.1%** (best) |
+
+The baseline went from best to worst between two runs of the *same* year; robust
+went from worst to best. The between-agent differences (~10–20 pts) are **smaller
+than the within-agent run-to-run spread** (~40–60 pts). Playbook tuning doesn't
+add a detectable edge — it just reshuffles noise.
+
+**(c) The run-to-run noise, laid out.** Every full-year return we recorded, by
+agent (deterministic benchmarks shown for contrast):
+
+| Agent | 2020 | 2021 | 2022 |
+|---|---|---|---|
+| claude_aggressive | +79.2, +20.8 | −5.2, +4.0, −4.4, −7.1 | −0.0, −4.3, −2.4, +0.0, −10.0, +0.8 |
+| claude_robust | +56.2, +35.1 | +12.0, +14.3, +23.8, −8.4 | −22.0, −3.1, −10.7 |
+| claude_return | +70.1, +31.9 | — | — |
+| claude_switch | — | +27.1 | −10.3, −18.1 |
+| random_control | +140.6, +77.8 | +4.4, −20.8, +1.8, −0.9 | −58.5, −47.2, −53.1, −53.4, −44.1 |
+| *SPY (deterministic)* | *+21.1* | *+26.9* | *−21.8* |
+| *IWM (deterministic)* | *—* | *+11.8* | *−25.3* |
+
+The only stable lines are the ones with no LLM in them. Note even the baseline's
+bear-defense (2022 column) — the project's most reproducible good property —
+clusters near flat but carries a −10% bad-draw tail.
+
+**(d) Regime-switching whipsawed.** Since robust won bulls and the baseline won
+bears, we built `claude_switch`: each day, point-in-time, it runs the robust
+playbook when SPY is above its 200-day MA (risk-on) and the cash-defensive
+baseline when below (risk-off). The mechanism worked — it stayed risk-on all of
+2021 and flipped risk-off when SPY broke its 200-DMA on 2022-01-21 — **but then
+whipsawed**: in choppy early-2022 it flipped risk-off↔risk-on **seven times in
+two months**, churning the book. Result in the bear:
+
+| 2022 (bear) | return |
+|---|---|
+| claude_aggressive (baseline) | +0.8% |
+| claude_robust | −10.7% |
+| **claude_switch** | **−18.1%** (worse than both) |
+
+A switch that lands below *both* of its components is the signature of the
+switching itself destroying value. Naïve 200-DMA regime-timing added a new
+failure mode (whipsaw/lag) without a reliable benefit.
+
+**Conclusion of the arc:** three independent attempts to turn the agent into a
+dependable edge — more models (§3.3), playbook variants (b), regime-switching (d)
+— all failed for the same reason: **the LLM's decision variance dominates.** The
+untested remaining lever is ensembling (averaging many runs per day to shrink
+variance ~1/√N), which is expensive and, given the magnitude of the noise,
+unlikely to clear the bar — but it is the only avenue not yet closed.
+
+### 3.7 Live forward test (in progress)
+
+Backtests carry upward biases (survivorship, a hindsight-built watchlist,
+idealized fills). The only way to know whether the baseline's behavior survives
+contact with reality is to trade it on **live, unseen days with fake money**. A
+daily paper-trade harness (`v2/live_runner.py`, a scheduled GitHub Actions job,
+and a committed ledger) runs the **baseline `claude_aggressive`** — the agent the
+evidence favors — plus a random control, forward from Nov 2026. Early days confirm
+the mechanics (T+1 fills, daily marks, SPY benchmark) and, encouragingly, the same
+**defensive character** seen in backtests: it holds one small position at ~90%
+cash rather than churning. It is far too early for a performance read; the real
+test is how it behaves through a live drawdown. This is the only part of the study
+still accumulating, and it is the honest arbiter of everything above.
+
+---
+
 ## 4. Findings
 
 1. **No Gemini persona beat the market** (primary study, §3.1). All three trailed
@@ -336,18 +457,43 @@ is still one model family, one bear episode, inside a backtest with upward biase
    edge and the strong-stable bear defense are the same trait — a drawdown-averse
    agent that participates modestly up and steps aside down.
 
-**Bottom line:** within a rigorous benchmark, **eight of nine LLM agents showed
-no edge versus passive indexing** — most trailed SPY outright, and a random
-control confirmed the baseline has none. The exception, **Claude Haiku 5.5
-(aggressive)**, is not the market-beater its first run suggested: its bull-market
-edge is modest and noisy (pooled 60% / +4.4%). But it has one reproducible,
-regime-robust property — **it preserves capital in bear markets** (three 2022
-runs ≈flat vs SPY −22%, 86% pooled beat-rate, single-digit drawdowns, by holding
-cash). The honest headline: **mostly negative, with one genuinely promising
-positive — a defensive, drawdown-averse agent whose value is avoiding losses, not
-chasing gains.** That asymmetry is income-relevant and now warrants a forward
-(paper-traded) test — but it is still one model, one bear episode, in a backtest
-with upward biases, so it is not yet a reason to deploy capital.
+8. **"Beating SPY" was mostly small-cap beta, not skill (§3.6a).** Benchmarked
+   against the honest like-for-like index — **IWM (Russell 2000)**, matching the
+   agents' $3–$50 universe — the apparent edge largely vanishes, and in the 2021
+   large-cap bull *every* agent trailed SPY (SPY +27%; baseline *lost* money).
+   The agents were long small-caps, not beating the market.
+9. **Playbook tuning added no detectable edge (§3.6b–c).** Two hand-built variants
+   (robust, return) were indistinguishable from the baseline and from each other:
+   across repeated full-year runs the ranking *inverted* (e.g. baseline best →
+   worst between two runs of the same 2020). The between-agent gap (~10–20 pts) is
+   smaller than the within-agent run-to-run spread (~40–60 pts).
+10. **Regime-switching made it worse (§3.6d).** A 200-DMA switch between robust
+    (risk-on) and the cash baseline (risk-off) flipped correctly at the regime
+    boundary but **whipsawed 7× in two months** in choppy 2022 and ended the bear
+    **below both components** (−18% vs baseline +1% / robust −11%). Market-timing
+    lag was a net cost.
+11. **The common cause is LLM decision noise, and it dominates.** The *same*
+    configuration swings 30–60 return-points run-to-run (the one stable thing in
+    the whole study is the benchmark lines, which contain no LLM). Every attempt
+    to engineer a dependable edge — more models, better playbook, regime-switching
+    — failed because the signal being tuned is smaller than this variance.
+
+**Bottom line:** within a rigorous benchmark, **no LLM agent produced a
+dependable edge over passive indexing**, and the three main ways to engineer one
+(more capable models, hand-tuned playbooks, regime-switching) all failed to the
+*same* cause: **the model's run-to-run decision variance is larger than any edge**
+(the identical configuration swings 30–60 points year-to-year). Most "wins"
+against SPY were small-cap beta that reversed against the right benchmark (IWM)
+and in a large-cap year (2021). The **one durable, useful property** is the
+baseline `claude_aggressive`'s **bear-market capital preservation** — near-flat
+across ~five 2022 runs while SPY fell 22%, by going to cash — which is real,
+income-relevant in shape, and the reason it is the agent in **live forward
+testing** (§3.7). The honest headline: **a clean negative result on
+"LLMs as a dependable trading strategy," with one narrow, real capital-preservation
+property worth watching live.** For the practical goal of a *dependable income
+source*, the answer is **no** — the decision noise is disqualifying, and tuning
+does not fix it. This bounds the claim to *"in this setup, these agents did not
+beat the market dependably,"* not *"LLMs cannot trade."*
 
 ---
 
@@ -356,12 +502,21 @@ with upward biases, so it is not yet a reason to deploy capital.
 - **Three model families now** (Gemini 3.8 Flash full roster; OpenAI `gpt-6-luna`
   and Claude Haiku 5.5 on balanced + aggressive). Still small/fast-tier only —
   frontier/reasoning-tier models and other personas may differ.
-- **Claude-aggressive is reproducible only in direction, not magnitude.** Three
-  runs gave 71% / 61% / 45% beat-rates (pooled 60%), so any single run's headline
-  is unreliable; the OpenAI and Gemini numbers are single runs and carry the same
-  risk. The **bear-market test (2022) is not yet run** and is the decisive open
-  question — the entire positive result is from a bull market.
-- **Two years, recent regimes.** No 2008/2020-scale crash in-sample.
+- **Run-to-run noise is the dominant limitation.** The same configuration swings
+  30–60 return-points between identical runs (§3.6c), so any single-run number —
+  including the single-run OpenAI/Gemini results — is unreliable. Conclusions here
+  rest on *repeated* runs and on the deterministic benchmark lines; magnitudes for
+  the LLM agents are indicative, not precise.
+- **Regimes now span 2020–2025** (added 2020 crash-recovery, 2021 bull, 2022 bear
+  for the variant/switch work), but each regime-and-agent cell is still only 1–3
+  runs — enough to see that noise dominates, not enough to pin small effects.
+- **The durable positive (baseline bear-defense) is one model, with a bad-draw
+  tail.** Reproduced near-flat across ~five 2022 runs, but with one −10% outlier;
+  it is a promising property, not a proven strategy, and remains to be confirmed
+  live (§3.7).
+- **Ensembling is untested.** Averaging many runs/day would shrink the noise
+  ~1/√N; we did not test it (cost), so "tuning cannot fix the noise" is shown for
+  model/playbook/regime-switch levers but not for ensembling.
 - **Lean historical info set** (no point-in-time news; §2.4), so historical and
   live behavior aren't identical.
 - **Free data caveats.** yfinance prices carry survivorship bias (delisted
