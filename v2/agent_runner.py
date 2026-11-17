@@ -92,6 +92,9 @@ def detect_regime(as_of=None, ma_window: int = 200) -> str:
     (no hindsight). Any data failure falls back to 'risk_on' so the switch
     never silently parks in cash on a fetch error."""
     try:
+        from datetime import date as _date
+        if isinstance(as_of, str):            # snapshot dates arrive as strings
+            as_of = _date.fromisoformat(as_of)
         from .price_provider import window_download
         data = window_download(["SPY"], as_of=as_of, period="2y")
         if data is None or getattr(data, "empty", True):

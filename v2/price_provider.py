@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 # Generous on the long end so rolling windows (e.g. SMA-200) have enough bars.
 _PERIOD_DAYS = {
     "1d": 6, "2d": 7, "5d": 10, "1mo": 35,
-    "3mo": 100, "6mo": 190, "1y": 372,
+    "3mo": 100, "6mo": 190, "1y": 372, "2y": 750,
 }
 
 # On-disk cache for HISTORICAL price windows. Historical bars never change, so
