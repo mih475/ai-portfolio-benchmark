@@ -65,5 +65,8 @@ jobs:
       - name: Run regime-switch signal test
         run: python3 v2/tests/test_regime.py
 
+      - name: Run NaN-price guard test
+        run: python3 v2/tests/test_nan_guard.py
+
       - name: Verify ChatGPT-v2 strict historical trade compliance (offline)
         run: python3 v2/tests/test_historical_compliance.py

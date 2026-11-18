@@ -67,7 +67,16 @@ class Position:
         return self.shares * self.entry_price
 
     def update_price(self, price: float):
-        """Update current price and recalculate unrealized P&L."""
+        """Update current price and recalculate unrealized P&L.
+
+        Reject non-finite or non-positive marks (e.g. a delisted ticker that
+        yfinance returns as NaN): keep the last good price instead. A single NaN
+        here would otherwise poison market_value -> portfolio value -> cash on the
+        next buy, permanently corrupting the account (seen live on a delisted
+        name). Carrying the last mark forward is the correct, safe behavior.
+        """
+        if not isinstance(price, (int, float)) or not math.isfinite(price) or price <= 0:
+            return
         self.current_price = price
         self.unrealized_pnl = (price - self.entry_price) * self.shares
         if self.entry_price > 0:
@@ -687,10 +696,14 @@ class PortfolioSimulator:
         return list(self.positions.keys())
 
     def _portfolio_value_at_price(self, prices: dict[str, float]) -> float:
-        """Calculate portfolio value using given prices."""
+        """Calculate portfolio value using given prices, falling back to each
+        position's last good mark for any missing or non-finite price so a NaN
+        can't propagate into sizing and poison cash."""
         val = self.cash
         for ticker, pos in self.positions.items():
             price = prices.get(ticker, pos.current_price)
+            if not isinstance(price, (int, float)) or not math.isfinite(price) or price <= 0:
+                price = pos.current_price  # update_price keeps this finite & > 0
             val += pos.shares * price
         return val
 
@@ -738,6 +751,16 @@ class PortfolioSimulator:
 
         with open(filepath, "r") as f:
             state = json.load(f)
+
+        # Auto-heal an unrecoverable account: once cash goes non-finite (a past
+        # NaN price that poisoned it before the update_price guard existed), every
+        # future day loads NaN and stays NaN. The real balance is unrecoverable,
+        # so restart the account cleanly rather than carry a dead NaN forever.
+        if not isinstance(state.get("cash"), (int, float)) or not math.isfinite(state.get("cash", float("nan"))):
+            logger.warning("[%s] loaded cash is non-finite (%r) — resetting account "
+                           "to a clean $%.0f start.", self.agent_id, state.get("cash"),
+                           self.starting_capital)
+            return  # keep __init__ defaults: starting cash, no positions/orders
 
         self.cash = state["cash"]
         self.peak_value = state.get("peak_value", self.starting_capital)
