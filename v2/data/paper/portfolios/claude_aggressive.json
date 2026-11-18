@@ -3,8 +3,8 @@
   "cash": 9000.0,
   "starting_capital": 10000.0,
   "peak_value": 10001.12,
-  "max_drawdown": 0.004454,
-  "last_value": 9956.58,
+  "max_drawdown": 0.005635,
+  "last_value": 9944.76,
   "positions": {
     "CELH": {
       "ticker": "CELH",
@@ -13,18 +13,31 @@
       "entry_date": "2026-11-10",
       "stop_loss_price": 30.3628,
       "take_profit_price": 41.2537,
-      "current_price": 31.56999969482422,
-      "unrealized_pnl": -43.420304754910404,
-      "unrealized_pnl_pct": -0.043420304371595955
+      "current_price": 31.18000030517578,
+      "unrealized_pnl": -55.237393901089604,
+      "unrealized_pnl_pct": -0.05523739341345389
     }
   },
-  "pending_orders": [],
+  "pending_orders": [
+    {
+      "action": "BUY",
+      "ticker": "CPRI",
+      "allocation_pct": 10,
+      "order_type": "MARKET",
+      "limit_price": null,
+      "stop_loss_pct": 10,
+      "take_profit_pct": null,
+      "reason": "Only watchlist name passing the core filters: above 50d SMA (16.4), SMA20 above SMA50, RSI 65, volume surge on 11/17 (9.65M vs 4.0M 20d avg). Sized as speculative given the 10% stop and unknown catalyst. Note the 11/17 candle gapped down and closed near lows, so this is a risk and entry is at T+1 open.",
+      "submitted_date": "2026-11-17"
+    }
+  ],
   "daily_returns": [
     0.0,
     -0.000615,
     0.000728,
     NaN,
     0,
-    -0.00258
+    -0.00258,
+    -0.001187
   ]
 }

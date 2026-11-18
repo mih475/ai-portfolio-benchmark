@@ -1,23 +1,11 @@
 [
   {
-    "date": "2026-11-16",
-    "cash": NaN,
-    "positions": {
-      "PENN": {
-        "ticker": "PENN",
-        "shares": 66.307319,
-        "entry_price": 18.2182,
-        "entry_date": "2026-11-11",
-        "stop_loss_price": 16.9794,
-        "take_profit_price": null,
-        "current_price": 17.780000686645508,
-        "unrealized_pnl": -29.055821656177244,
-        "unrealized_pnl_pct": -0.024052832516631265
-      }
-    },
-    "portfolio_value": NaN,
-    "daily_return": 0,
-    "cumulative_return": NaN,
+    "date": "2026-11-17",
+    "cash": 10000.0,
+    "positions": {},
+    "portfolio_value": 10000.0,
+    "daily_return": 0.0,
+    "cumulative_return": 0.0,
     "transactions_today": []
   }
 ]

@@ -1,6 +1,6 @@
 [
   {
-    "date": "2026-11-16",
+    "date": "2026-11-17",
     "cash": 9000.0,
     "positions": {
       "CELH": {
@@ -10,14 +10,14 @@
         "entry_date": "2026-11-10",
         "stop_loss_price": 30.3628,
         "take_profit_price": 41.2537,
-        "current_price": 31.56999969482422,
-        "unrealized_pnl": -43.420304754910404,
-        "unrealized_pnl_pct": -0.043420304371595955
+        "current_price": 31.18000030517578,
+        "unrealized_pnl": -55.237393901089604,
+        "unrealized_pnl_pct": -0.05523739341345389
       }
     },
-    "portfolio_value": 9956.58,
-    "daily_return": -0.00258,
-    "cumulative_return": -0.004342,
+    "portfolio_value": 9944.76,
+    "daily_return": -0.001187,
+    "cumulative_return": -0.005524,
     "transactions_today": []
   }
 ]
