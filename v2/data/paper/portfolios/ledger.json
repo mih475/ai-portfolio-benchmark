@@ -353,5 +353,58 @@
       "value": 9730.96,
       "cum_ret": -0.026904
     }
+  },
+  {
+    "date": "2026-11-18",
+    "agents": {
+      "claude_aggressive": {
+        "value": 10019.21,
+        "day_ret": 0.007486,
+        "cum_ret": 0.001921,
+        "cash_pct": 79.9,
+        "n_positions": 2,
+        "positions": [
+          "CELH",
+          "CPRI"
+        ],
+        "max_drawdown": 0.005635,
+        "fills_today": [
+          {
+            "action": "BUY",
+            "ticker": "CPRI",
+            "shares": 52.5859,
+            "price": 18.9489,
+            "trigger": "AGENT"
+          }
+        ],
+        "pending_next_open": []
+      },
+      "random_control": {
+        "value": 10000.0,
+        "day_ret": 0.0,
+        "cum_ret": 0.0,
+        "cash_pct": 100.0,
+        "n_positions": 0,
+        "positions": [],
+        "max_drawdown": 0.0,
+        "fills_today": [],
+        "pending_next_open": [
+          {
+            "action": "BUY",
+            "ticker": "CRSP",
+            "allocation_pct": 14.32
+          },
+          {
+            "action": "BUY",
+            "ticker": "SNAP",
+            "allocation_pct": 13.59
+          }
+        ]
+      }
+    },
+    "spy": {
+      "value": 9701.21,
+      "cum_ret": -0.029879
+    }
   }
 ]

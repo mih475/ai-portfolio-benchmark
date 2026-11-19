@@ -9,17 +9,29 @@
   "pending_orders": [
     {
       "action": "BUY",
-      "ticker": "SOXL",
-      "allocation_pct": 10.97,
+      "ticker": "CRSP",
+      "allocation_pct": 14.32,
       "order_type": "MARKET",
       "limit_price": null,
-      "stop_loss_pct": 11.9,
-      "take_profit_pct": 46.2,
+      "stop_loss_pct": 11.0,
+      "take_profit_pct": 15.5,
       "reason": "Randomly selected from liquid universe.",
-      "submitted_date": "2026-11-17"
+      "submitted_date": "2026-11-18"
+    },
+    {
+      "action": "BUY",
+      "ticker": "SNAP",
+      "allocation_pct": 13.59,
+      "order_type": "MARKET",
+      "limit_price": null,
+      "stop_loss_pct": 7.6,
+      "take_profit_pct": null,
+      "reason": "Randomly selected from liquid universe.",
+      "submitted_date": "2026-11-18"
     }
   ],
   "daily_returns": [
+    0.0,
     0.0
   ]
 }
