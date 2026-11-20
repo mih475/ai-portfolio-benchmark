@@ -406,5 +406,50 @@
       "value": 9701.21,
       "cum_ret": -0.029879
     }
+  },
+  {
+    "date": "2026-11-19",
+    "agents": {
+      "claude_aggressive": {
+        "value": 9907.21,
+        "day_ret": -0.011178,
+        "cum_ret": -0.009279,
+        "cash_pct": 80.8,
+        "n_positions": 2,
+        "positions": [
+          "CELH",
+          "CPRI"
+        ],
+        "max_drawdown": 0.011178,
+        "fills_today": [],
+        "pending_next_open": []
+      },
+      "random_control": {
+        "value": 10000.0,
+        "day_ret": 0.0,
+        "cum_ret": 0.0,
+        "cash_pct": 100.0,
+        "n_positions": 0,
+        "positions": [],
+        "max_drawdown": 0.0,
+        "fills_today": [],
+        "pending_next_open": [
+          {
+            "action": "BUY",
+            "ticker": "CELH",
+            "allocation_pct": 10.7
+          },
+          {
+            "action": "BUY",
+            "ticker": "CPRI",
+            "allocation_pct": 10.33
+          }
+        ]
+      }
+    },
+    "spy": {
+      "value": 9510.82,
+      "cum_ret": -0.048918
+    }
   }
 ]

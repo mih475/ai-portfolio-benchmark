@@ -1,6 +1,6 @@
 [
   {
-    "date": "2026-11-18",
+    "date": "2026-11-19",
     "cash": 8003.55,
     "positions": {
       "CELH": {
@@ -10,9 +10,9 @@
         "entry_date": "2026-11-10",
         "stop_loss_price": 30.3628,
         "take_profit_price": 41.2537,
-        "current_price": 32.75,
-        "unrealized_pnl": -7.665969828000003,
-        "unrealized_pnl_pct": -0.007665969760324822
+        "current_price": 30.719999313354492,
+        "unrealized_pnl": -69.1755509135484,
+        "unrealized_pnl_pct": -0.06917555030286665
       },
       "CPRI": {
         "ticker": "CPRI",
@@ -21,28 +21,14 @@
         "entry_date": "2026-11-18",
         "stop_loss_price": 17.054,
         "take_profit_price": null,
-        "current_price": 19.459999084472656,
-        "unrealized_pnl": 26.876627323431375,
-        "unrealized_pnl_pct": 0.026972493626155503
+        "current_price": 18.5,
+        "unrealized_pnl": -23.60582981269991,
+        "unrealized_pnl_pct": -0.023690029500393076
       }
     },
-    "portfolio_value": 10019.21,
-    "daily_return": 0.007486,
-    "cumulative_return": 0.001921,
-    "transactions_today": [
-      {
-        "date": "2026-11-18",
-        "action": "BUY",
-        "ticker": "CPRI",
-        "shares": 52.585943,
-        "price": 18.9489,
-        "total": 996.45,
-        "stop_loss": 17.054,
-        "take_profit": null,
-        "reason": "Only watchlist name passing the core filters: above 50d SMA (16.4), SMA20 above SMA50, RSI 65, volume surge on 11/17 (9.65M vs 4.0M 20d avg). Sized as speculative given the 10% stop and unknown catalyst. Note the 11/17 candle gapped down and closed near lows, so this is a risk and entry is at T+1 open.",
-        "trigger": "AGENT",
-        "order_type": "MARKET"
-      }
-    ]
+    "portfolio_value": 9907.21,
+    "daily_return": -0.011178,
+    "cumulative_return": -0.009279,
+    "transactions_today": []
   }
 ]

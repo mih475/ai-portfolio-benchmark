@@ -9,28 +9,29 @@
   "pending_orders": [
     {
       "action": "BUY",
-      "ticker": "CRSP",
-      "allocation_pct": 14.32,
+      "ticker": "CELH",
+      "allocation_pct": 10.7,
       "order_type": "MARKET",
       "limit_price": null,
-      "stop_loss_pct": 11.0,
-      "take_profit_pct": 15.5,
+      "stop_loss_pct": 11.8,
+      "take_profit_pct": 24.7,
       "reason": "Randomly selected from liquid universe.",
-      "submitted_date": "2026-11-18"
+      "submitted_date": "2026-11-19"
     },
     {
       "action": "BUY",
-      "ticker": "SNAP",
-      "allocation_pct": 13.59,
+      "ticker": "CPRI",
+      "allocation_pct": 10.33,
       "order_type": "MARKET",
       "limit_price": null,
-      "stop_loss_pct": 7.6,
-      "take_profit_pct": null,
+      "stop_loss_pct": 15.0,
+      "take_profit_pct": 48.0,
       "reason": "Randomly selected from liquid universe.",
-      "submitted_date": "2026-11-18"
+      "submitted_date": "2026-11-19"
     }
   ],
   "daily_returns": [
+    0.0,
     0.0,
     0.0
   ]

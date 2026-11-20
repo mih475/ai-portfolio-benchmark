@@ -3,8 +3,8 @@
   "cash": 8003.55,
   "starting_capital": 10000.0,
   "peak_value": 10019.21,
-  "max_drawdown": 0.005635,
-  "last_value": 10019.21,
+  "max_drawdown": 0.011178,
+  "last_value": 9907.21,
   "positions": {
     "CELH": {
       "ticker": "CELH",
@@ -13,9 +13,9 @@
       "entry_date": "2026-11-10",
       "stop_loss_price": 30.3628,
       "take_profit_price": 41.2537,
-      "current_price": 32.75,
-      "unrealized_pnl": -7.665969828000003,
-      "unrealized_pnl_pct": -0.007665969760324822
+      "current_price": 30.719999313354492,
+      "unrealized_pnl": -69.1755509135484,
+      "unrealized_pnl_pct": -0.06917555030286665
     },
     "CPRI": {
       "ticker": "CPRI",
@@ -24,9 +24,9 @@
       "entry_date": "2026-11-18",
       "stop_loss_price": 17.054,
       "take_profit_price": null,
-      "current_price": 19.459999084472656,
-      "unrealized_pnl": 26.876627323431375,
-      "unrealized_pnl_pct": 0.026972493626155503
+      "current_price": 18.5,
+      "unrealized_pnl": -23.60582981269991,
+      "unrealized_pnl_pct": -0.023690029500393076
     }
   },
   "pending_orders": [],
@@ -38,6 +38,7 @@
     0,
     -0.00258,
     -0.001187,
-    0.007486
+    0.007486,
+    -0.011178
   ]
 }
