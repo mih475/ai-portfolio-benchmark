@@ -1,22 +1,11 @@
 {
   "agent_id": "claude_aggressive",
-  "cash": 8003.55,
+  "cash": 8922.63,
   "starting_capital": 10000.0,
   "peak_value": 10019.21,
-  "max_drawdown": 0.011178,
-  "last_value": 9907.21,
+  "max_drawdown": 0.017389,
+  "last_value": 9844.99,
   "positions": {
-    "CELH": {
-      "ticker": "CELH",
-      "shares": 30.300276,
-      "entry_price": 33.003,
-      "entry_date": "2026-11-10",
-      "stop_loss_price": 30.3628,
-      "take_profit_price": 41.2537,
-      "current_price": 30.719999313354492,
-      "unrealized_pnl": -69.1755509135484,
-      "unrealized_pnl_pct": -0.06917555030286665
-    },
     "CPRI": {
       "ticker": "CPRI",
       "shares": 52.585943,
@@ -24,12 +13,35 @@
       "entry_date": "2026-11-18",
       "stop_loss_price": 17.054,
       "take_profit_price": null,
-      "current_price": 18.5,
-      "unrealized_pnl": -23.60582981269991,
-      "unrealized_pnl_pct": -0.023690029500393076
+      "current_price": 17.540000915527344,
+      "unrealized_pnl": -74.0882869488312,
+      "unrealized_pnl_pct": -0.07435255262694165
     }
   },
-  "pending_orders": [],
+  "pending_orders": [
+    {
+      "action": "SELL",
+      "ticker": "CPRI",
+      "allocation_pct": 100,
+      "order_type": "MARKET",
+      "limit_price": null,
+      "stop_loss_pct": 10,
+      "take_profit_pct": null,
+      "reason": "Momentum broke: CPRI closed at 17.54, below its 20-day SMA (19.25) and near the 17.05 stop after a 9%+ drop on 4x volume on 11/17. Playbook says exit immediately when price loses the 20-day MA. Exit at market rather than wait for the stop.",
+      "submitted_date": "2026-11-20"
+    },
+    {
+      "action": "BUY",
+      "ticker": "PENN",
+      "allocation_pct": 10,
+      "order_type": "MARKET",
+      "limit_price": null,
+      "stop_loss_pct": 8,
+      "take_profit_pct": 25,
+      "reason": "Trend and relative strength: price 18.05 is above SMA-20 (17.16) and SMA-50 (16.22), RSI 61, and the SMA-20 is above the SMA-50. Consumer Discretionary (XLY) is a LEADING sector. Volume is only about 1.1x average, below the 1.5x filter, so this is sized as a standard position, not high conviction. Stop at about 16.61 is 8% below entry.",
+      "submitted_date": "2026-11-20"
+    }
+  ],
   "daily_returns": [
     0.0,
     -0.000615,
@@ -39,6 +51,7 @@
     -0.00258,
     -0.001187,
     0.007486,
-    -0.011178
+    -0.011178,
+    -0.006281
   ]
 }

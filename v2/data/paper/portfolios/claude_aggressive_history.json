@@ -1,19 +1,8 @@
 [
   {
-    "date": "2026-11-19",
-    "cash": 8003.55,
+    "date": "2026-11-20",
+    "cash": 8922.63,
     "positions": {
-      "CELH": {
-        "ticker": "CELH",
-        "shares": 30.300276,
-        "entry_price": 33.003,
-        "entry_date": "2026-11-10",
-        "stop_loss_price": 30.3628,
-        "take_profit_price": 41.2537,
-        "current_price": 30.719999313354492,
-        "unrealized_pnl": -69.1755509135484,
-        "unrealized_pnl_pct": -0.06917555030286665
-      },
       "CPRI": {
         "ticker": "CPRI",
         "shares": 52.585943,
@@ -21,14 +10,28 @@
         "entry_date": "2026-11-18",
         "stop_loss_price": 17.054,
         "take_profit_price": null,
-        "current_price": 18.5,
-        "unrealized_pnl": -23.60582981269991,
-        "unrealized_pnl_pct": -0.023690029500393076
+        "current_price": 17.540000915527344,
+        "unrealized_pnl": -74.0882869488312,
+        "unrealized_pnl_pct": -0.07435255262694165
       }
     },
-    "portfolio_value": 9907.21,
-    "daily_return": -0.011178,
-    "cumulative_return": -0.009279,
-    "transactions_today": []
+    "portfolio_value": 9844.99,
+    "daily_return": -0.006281,
+    "cumulative_return": -0.015501,
+    "transactions_today": [
+      {
+        "date": "2026-11-20",
+        "action": "SELL",
+        "ticker": "CELH",
+        "shares": 30.300276,
+        "price": 30.3324,
+        "total": 919.08,
+        "stop_loss": null,
+        "take_profit": null,
+        "reason": "STOP-LOSS triggered (low=$28.32 \u2264 stop=$30.36)",
+        "trigger": "STOP_LOSS",
+        "order_type": "MARKET"
+      }
+    ]
   }
 ]
