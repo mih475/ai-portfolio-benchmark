@@ -100,35 +100,35 @@
     <h1>No Free Alpha
       <span class="sub">Benchmarking autonomous LLM trading agents against passive indexing</span>
     </h1>
-    <p class="standfirst">Across eight quarters of point-in-time backtests (2024&ndash;2025), no Gemini-based trading agent &mdash; conservative, balanced, or aggressive &mdash; beat a passive S&amp;P 500 buy-and-hold on a risk-adjusted basis, and a random control matched or beat all of them.</p>
-    <p class="byline">Dated 2026-10-29 · AI-assisted, human-directed (see Appendix C)</p>
+    <p class="standfirst">Across model families, hand-tuned strategy playbooks, and a regime-switching meta-agent (2020&ndash;2025), no autonomous LLM trading agent produced a <em>dependable</em> edge over passive indexing. Run-to-run model decision noise &mdash; 30&ndash;60 return-points on the <em>identical</em> configuration &mdash; dominates any edge, most apparent &ldquo;beating SPY&rdquo; is small-cap beta, and the one durable, useful property is a single agent&rsquo;s bear-market capital preservation, now being validated live.</p>
+    <p class="byline">Revised 2026-11-23 (first draft 2026-10-29) · AI-assisted, human-directed (see Appendix C)</p>
   </header>
 
   <div class="abstract">
     <h2>Abstract</h2>
-    <p>We test whether autonomous large-language-model (LLM) trading agents can beat a passive S&amp;P 500 buy-and-hold benchmark (SPY) in US equities. Three risk personas (conservative, balanced, aggressive) built on Google&rsquo;s Gemini 3.8 Flash trade a rules-enforced simulator over eight quarters (2024&ndash;2025), with a random-trading control and a passive SPY benchmark. The simulator enforces trading rules in code (long-only $3&ndash;$50 universe, T+1 execution, mandatory stops), and all historical data is served point-in-time to eliminate look-ahead. We evaluate with return, maximum drawdown, annualized volatility, Sharpe ratio, and a paired bootstrap that estimates each agent&rsquo;s probability of beating SPY. Over two years, SPY returned +48.6%; the best agent (balanced) returned +37.8% and beat SPY in only 40% of bootstrapped paths, while aggressive (+1.6%) and conservative (+3.2%) fared far worse. A random control returned +67.1% &mdash; by taking the most risk, not by skill. No persona showed risk-adjusted skill versus passive indexing. We release the full benchmark, tests, and reproduction workflows.</p>
+    <p>We test whether autonomous large-language-model (LLM) trading agents can beat a passive benchmark in US equities, and &mdash; when one appears to &mdash; whether the edge is real, reproducible, and improvable. Agents built on Google Gemini, OpenAI, and Anthropic models trade a rules-enforced, point-in-time simulator (long-only $3&ndash;$50 universe, T+1 execution, mandatory stops) against a passive SPY benchmark, a small-cap IWM benchmark, and a random-trading control. In the primary study (Gemini, 2024&ndash;2025, eight quarters) no persona beat SPY on a risk-adjusted basis and a random control matched or beat all of them. Extending the study exposes a deeper result: (i) the single standout, Anthropic Claude Haiku 5.5 (aggressive), decayed from a 71% to a pooled 60% beat-rate over repeated runs; (ii) apparent SPY-beating was largely small-cap beta that reversed against IWM and in a large-cap-led year (2021); (iii) two hand-tuned playbook variants were statistically indistinguishable from the baseline, with the <em>ranking inverting between runs of the same year</em>; and (iv) a 200-day-MA regime-switching meta-agent whipsawed and underperformed both of its components. The common cause is <strong>LLM run-to-run decision variance that exceeds any edge</strong> &mdash; the only stable lines in the study are the ones with no model in them. The lone durable, useful property is the baseline agent&rsquo;s bear-market capital preservation (near-flat across ~5 runs of 2022 while SPY fell 22%, by going to cash), now under live paper-trading validation. We release the full benchmark, tests, and reproduction workflows. The result is a clean negative on &ldquo;LLMs as a dependable trading strategy,&rdquo; with one narrow, real capital-preservation property worth watching.</p>
   </div>
 
   <section>
     <h2><span class="n">1</span>Introduction</h2>
     <p>LLMs can now call tools, read market data, and emit structured decisions, prompting a natural question: can an LLM run a portfolio and beat the market? Public demonstrations tend to report a single impressive run, which is exactly the setup most vulnerable to look-ahead bias, survivorship bias, and small-sample luck.</p>
-    <p>This project asks the question under conditions designed to make a positive result hard to fake: a deterministic simulator that enforces trading rules in code; strict point-in-time data so a historical agent cannot see the future; a passive SPY benchmark; a random-trading control to calibrate luck; and a paired bootstrap over pooled quarters so the verdict carries statistical weight rather than resting on one window.</p>
-    <p><strong>Research question.</strong> Does an autonomous LLM agent beat passive S&amp;P 500 buy-and-hold on a risk-adjusted basis, and if so, by a margin large enough to matter?</p>
-    <p><strong>Contribution.</strong> (1) An open, rules-enforced, look-ahead-free benchmark for LLM trading agents with a passive benchmark and a random control. (2) A statistical protocol &mdash; daily-return risk metrics plus a pooled paired bootstrap &mdash; that reports the <em>probability</em> an agent beats the market rather than a single return. (3) A clean negative result across three personas and eight quarters, corroborated out-of-sample.</p>
-    <p><strong>Headline finding.</strong> No persona beat SPY. Over 2024&ndash;2025 SPY compounded to +48.6%; the best agent (balanced) reached +37.8% with a 40% beat-probability, and the others trailed badly. A dart-throwing control matched or beat every agent, which is the clearest evidence that observed agent performance reflects risk-taking and luck, not skill.</p>
+    <p>This project asks the question under conditions designed to make a positive result hard to fake: a deterministic simulator that enforces trading rules in code; strict point-in-time data so a historical agent cannot see the future; passive SPY <em>and</em> small-cap IWM benchmarks; a random-trading control to calibrate luck; and a paired bootstrap over pooled quarters so the verdict carries statistical weight. When a candidate edge did appear, we then did what single-run demonstrations never do: we tried to <em>break it</em> &mdash; repeating runs, testing other model families, correcting the benchmark, hand-tuning the strategy, and building a regime-switcher to combine the best behaviors.</p>
+    <p><strong>Research question.</strong> Does an autonomous LLM agent beat passive indexing on a risk-adjusted basis; if so, is the edge reproducible; and can it be engineered into something dependable?</p>
+    <p><strong>Contribution.</strong> (1) An open, rules-enforced, look-ahead-free benchmark with passive (SPY), like-for-like (IWM), and random controls. (2) A statistical protocol &mdash; daily-return risk metrics plus a pooled paired bootstrap &mdash; that reports the <em>probability</em> an agent beats the market rather than a single return. (3) A clean negative result that survives three independent attempts to engineer an edge (more capable models, hand-tuned playbooks, regime-switching), all defeated by the same cause: model decision noise larger than any signal. (4) One isolated, durable, income-relevant property (bear-market capital preservation) and a live forward test of it.</p>
+    <p><strong>Headline finding.</strong> No LLM agent produced a dependable edge. The identical configuration swings 30&ndash;60 return-points between runs; the only stable performers are the deterministic benchmark lines. Most &ldquo;wins&rdquo; over SPY were small-cap beta. The one real, reproducible property is defensive: the baseline agent preserves capital in bear markets by moving to cash.</p>
   </section>
 
   <section>
     <h2><span class="n">2</span>Background &amp; related work</h2>
-    <p><strong>LLM agents in finance.</strong> A growing body of demonstrations wires LLMs to market data and tools and reports trading performance. Most share two weaknesses: they evaluate over short windows, and they do not rigorously prevent the model from accessing information unavailable at the simulated decision time. Both inflate apparent skill.</p>
-    <p><strong>Backtesting pitfalls.</strong> The standard hazards are well known in quantitative finance: <em>look-ahead bias</em> (using data not yet available), <em>survivorship bias</em> (a universe that silently excludes delisted names), <em>data-snooping</em> (selecting a strategy that fit one window), and <em>ignoring costs</em> (slippage, fills). An LLM adds a subtler channel: a model trained on data through some cutoff may &ldquo;remember&rdquo; how a past period resolved, so a backtest must also deny it live tools that would reveal the future.</p>
-    <p><strong>Efficient markets as the null.</strong> The efficient-market hypothesis predicts that, net of risk and costs, active strategies should not reliably beat a passive benchmark. A rigorous LLM-trading study is therefore a test against a strong null: the interesting outcome is not &ldquo;the agent made money&rdquo; (a rising market does that) but &ldquo;the agent beat buy-and-hold on a risk-adjusted basis, repeatably.&rdquo; This framing motivates our two reference points &mdash; a passive SPY benchmark and a random control &mdash; and our focus on risk-adjusted, pooled statistics rather than single-run returns.</p>
+    <p><strong>LLM agents in finance.</strong> A growing body of demonstrations wires LLMs to market data and tools and reports trading performance. Most share two weaknesses: they evaluate over short windows, and they do not rigorously prevent the model from accessing information unavailable at the simulated decision time. A third, which this study foregrounds, is <em>nondeterminism</em>: a single reported run says little when the same agent&rsquo;s output varies widely between runs.</p>
+    <p><strong>Backtesting pitfalls.</strong> The standard hazards are well known: <em>look-ahead bias</em>, <em>survivorship bias</em>, <em>data-snooping</em>, and <em>ignoring costs</em>. An LLM adds a subtler channel: a model trained through some cutoff may &ldquo;remember&rdquo; how a past period resolved, so a backtest must also deny it live tools that would reveal the future. And because LLM output is stochastic, a backtest must be <em>repeated</em>, not run once.</p>
+    <p><strong>Efficient markets as the null.</strong> The efficient-market hypothesis predicts that, net of risk and costs, active strategies should not reliably beat a passive benchmark. The interesting outcome is not &ldquo;the agent made money&rdquo; (a rising market does that) but &ldquo;the agent beat buy-and-hold on a risk-adjusted basis, <em>repeatably</em>.&rdquo; This motivates our reference points &mdash; passive SPY, like-for-like IWM, and a random control &mdash; and our focus on pooled, risk-adjusted statistics over single-run returns.</p>
   </section>
 
   <section>
     <h2><span class="n">3</span>Experimental design</h2>
     <h3>3.1 Simulation environment (&ldquo;Code is Law&rdquo;)</h3>
-    <p>A deterministic simulator executes and scores trades; the LLM only <em>proposes</em> them. Rules are enforced in code, not by prompt, so a model cannot talk its way around them:</p>
+    <p>A deterministic simulator executes and scores trades; the LLM only <em>proposes</em> them. Rules are enforced in code, not by prompt:</p>
     <figure>
       <figcaption>Table 1 · Rules enforced by the simulator</figcaption>
       <div class="tbl"><table>
@@ -144,139 +144,154 @@
       </table></div>
     </figure>
     <h3>3.2 Agents and personas</h3>
-    <p>Each agent is a model &times; persona. Personas (conservative / balanced / aggressive) differ only in a system-prompt risk mandate. The study model is <strong>Gemini 3.8 Flash</strong> at temperature 0. A <strong>random control</strong> (no LLM) trades randomly within the same rules and the same daily watchlist &mdash; the skill-versus-luck baseline.</p>
+    <p>Each agent is a model &times; persona; personas (conservative / balanced / aggressive) differ only in a system-prompt risk mandate. The primary study uses <strong>Gemini 3.8 Flash</strong> (temperature 0); it was later extended to <strong>OpenAI <code>gpt-6-luna</code></strong> and <strong>Anthropic Claude Haiku 5.5</strong> on the balanced and aggressive personas. The tuning arc (&sect;4.5&ndash;4.7) adds three Claude-Haiku <strong>variants</strong> sharing the same model: <code>robust</code> (ATR-based stops, volatility-targeted sizing, earlier de-risk), <code>return</code> (trailing-only profit-taking, a re-entry rule), and <code>switch</code> (a meta-agent that each day picks the robust or baseline playbook by SPY&rsquo;s 200-day MA). Because a standing playbook is just the agent&rsquo;s system prompt, a &ldquo;variant&rdquo; is the same model reading different instructions. A <strong>random control</strong> (no LLM) trades randomly within the same rules and daily watchlist &mdash; the skill-versus-luck baseline.</p>
     <h3>3.3 Data</h3>
-    <p>Prices from Yahoo Finance (yfinance); macro indicators (yields, VIX, Fed funds) from FRED. Both free. Historical prices are cached on disk and retried with backoff for reproducibility.</p>
+    <p>Prices from Yahoo Finance (yfinance); macro indicators from FRED. Both free. Historical prices are cached on disk and retried with backoff; non-finite marks are rejected and carried forward so a single bad price cannot corrupt an account.</p>
     <h3>3.4 Point-in-time integrity (no look-ahead)</h3>
-    <p>A backtest for a past date must not see the future. Enforced: (a) prices come from a window <em>ending at</em> the simulation date, never the latest bar; (b) FRED series are fetched as-of that date; (c) LLM tools are gated by a run-level date context &mdash; date-aware tools receive the as-of date, while tools that can only return the present (web search, news, fundamentals, URL fetch) are <strong>disabled</strong> on a past date; (d) the live market narrative and catalyst watchlist are <strong>suppressed</strong> for historical snapshots. The honest cost: historical agents trade on a leaner information set (prices + macro + technicals, no news) than a live agent would &mdash; the correct trade-off, since fabricated as-of news would be worse.</p>
+    <p>A backtest for a past date must not see the future. Enforced: (a) prices come from a window <em>ending at</em> the simulation date; (b) FRED series are fetched as-of that date; (c) date-aware tools receive the as-of date, while tools that can only return the present (web search, news, fundamentals) are <strong>disabled</strong> on a past date; (d) the live market narrative and catalyst watchlist are <strong>suppressed</strong> for historical snapshots; (e) the regime signal (&sect;4.7) uses only closes up to the decision date. The honest cost: historical agents trade on a leaner information set than a live agent would &mdash; the correct trade-off, since fabricated as-of news would be worse.</p>
     <h3>3.5 Benchmarks</h3>
-    <p>Two reference points are computed over the identical window: <strong>SPY buy-and-hold</strong> (the passive benchmark) and the <strong>random control</strong> (the luck baseline).</p>
+    <p>Three reference points over the identical window: <strong>SPY buy-and-hold</strong> (passive, large-cap), <strong>IWM buy-and-hold</strong> (Russell 2000, small-cap &mdash; the <em>like-for-like</em> benchmark, since the agents trade a $3&ndash;$50 small-cap universe and SPY flatters them), and the <strong>random control</strong> (luck baseline).</p>
     <h3>3.6 Statistical method</h3>
-    <p>Per run we report return, maximum drawdown, annualized volatility, and Sharpe (rf = 0) from the daily-return series. To answer &ldquo;beats SPY?&rdquo; we use a <strong>paired bootstrap</strong>: the same resampled trading days are applied to the agent and to SPY together, terminal wealth is compared, and we report the probability the agent beats SPY and the margin distribution (5th/50th/95th percentiles). For a verdict with weight, per-day (agent, SPY) pairs are <strong>pooled across all eight quarters</strong> (&asymp;500 observations) before bootstrapping. The simulator is covered by 67 offline unit tests run in CI; LLM calls are stochastic even at temperature 0, so conclusions come from the pooled distribution, not any single path.</p>
+    <p>Per run we report return, maximum drawdown, annualized volatility, and Sharpe (rf = 0). To answer &ldquo;beats SPY?&rdquo; we use a <strong>paired bootstrap</strong>: the same resampled days are applied to agent and SPY together, terminal wealth compared, and we report the probability the agent beats SPY and the margin distribution. Per-day pairs are <strong>pooled across quarters</strong> before bootstrapping. Critically, because LLM calls are stochastic even at temperature 0, we <strong>repeat</strong> each configuration and read conclusions from the <em>spread across runs</em>, not any single path. The simulator and analysis scripts are covered by stdlib-only unit tests in CI.</p>
   </section>
 
   <section>
     <h2><span class="n">4</span>Results</h2>
-    <p>All eight quarters ran cleanly (every agent traded; no failed or flat quarters). Headline: <strong>no persona beat SPY buy-and-hold</strong>, and a random control beat all three.</p>
-
+    <h3>4.1 Primary study (Gemini, 2024&ndash;2025): no persona beat SPY</h3>
+    <p>All eight quarters ran cleanly. Two-year compounded ($10,000 start):</p>
     <figure>
-      <figcaption>Table 2 · Per-quarter total return, 2024&ndash;2025</figcaption>
+      <figcaption>Table 2 · Two-year compounded performance, Gemini primary study</figcaption>
       <div class="tbl"><table>
-        <thead><tr><th>Quarter</th><th>Conservative</th><th>Balanced</th><th>Aggressive</th><th>Random</th><th>SPY</th></tr></thead>
+        <thead><tr><th>Agent</th><th>2-yr total</th><th>Qtrs beating SPY</th><th>Quarterly vol</th></tr></thead>
         <tbody>
-          <tr><td>2024 Q1</td><td>+2.73%</td><td>+11.39%</td><td>+18.76%</td><td>+7.89%</td><td>+11.01%</td></tr>
-          <tr><td>2024 Q2</td><td>&minus;3.83%</td><td>+4.93%</td><td>&minus;16.79%</td><td>&minus;3.73%</td><td>+4.56%</td></tr>
-          <tr><td>2024 Q3</td><td>+8.92%</td><td>+8.31%</td><td>+13.65%</td><td>+6.65%</td><td>+5.53%</td></tr>
-          <tr><td>2024 Q4</td><td>&minus;2.42%</td><td>+5.77%</td><td>+19.08%</td><td>+22.86%</td><td>+3.42%</td></tr>
-          <tr><td>2025 Q1</td><td>&minus;0.67%</td><td>&minus;1.93%</td><td>&minus;23.77%</td><td>&minus;11.62%</td><td>&minus;4.03%</td></tr>
-          <tr><td>2025 Q2</td><td>&minus;0.87%</td><td>+7.84%</td><td>+8.56%</td><td>+36.44%</td><td>+10.47%</td></tr>
-          <tr><td>2025 Q3</td><td>+1.28%</td><td>&minus;1.63%</td><td>&minus;10.38%</td><td>+16.45%</td><td>+8.16%</td></tr>
-          <tr><td>2025 Q4</td><td>&minus;1.43%</td><td>&minus;1.06%</td><td>+2.42%</td><td>&minus;12.54%</td><td>+2.32%</td></tr>
+          <tr><td>random_control</td><td class="pos">+67.1%</td><td>4 / 8</td><td>16.0%</td></tr>
+          <tr class="hi"><td>spy_buy_hold</td><td>+48.6%</td><td>&mdash;</td><td>4.6%</td></tr>
+          <tr><td>gemini_balanced</td><td class="pos">+37.8%</td><td>5 / 8</td><td>4.8%</td></tr>
+          <tr><td>gemini_conservative</td><td class="pos">+3.2%</td><td>2 / 8</td><td>3.7%</td></tr>
+          <tr><td>gemini_aggressive</td><td class="pos">+1.6%</td><td>4 / 8</td><td>15.5%</td></tr>
         </tbody>
       </table></div>
     </figure>
+    <p>Pooled paired bootstrap (~500 day-pairs, 1-yr horizon; near 50% = no edge): random 59%, <strong>balanced 40%</strong>, aggressive 27%, conservative 12%. No agent reaches a coin-flip; the dart-throwing control beats all three. A separate 2026&nbsp;Q2 run reproduced the ordering (no persona beat SPY on return or Sharpe). &sect;5 explains why the random control &ldquo;won&rdquo; (lottery-ticket concentration + buy-and-hold beta), and why it is still not skill.</p>
 
+    <h3>4.2 Cross-model extension: one standout, then it decays</h3>
+    <p>Adding OpenAI and Anthropic (balanced + aggressive, same eight quarters): both OpenAI personas trailed SPY (<code>gpt-6-luna</code> balanced 25% / aggressive 13% beat-rate), and Claude&rsquo;s balanced trailed (13%). The one exception, <strong>Claude Haiku 5.5 aggressive</strong>, looked spectacular on its first run &mdash; +84% over two years, a 71% beat-rate. But repeating the identical run three times showed the edge decaying every time &mdash; <strong>71% &rarr; 61% &rarr; 45%</strong> beat-rate; <strong>+84% &rarr; +62% &rarr; +44%</strong> compounded, the third run landing <em>below</em> SPY. Pooled, the honest estimate is a <strong>modest 60% beat-rate / +4.4% median margin</strong>, not the market-beater it first appeared. (A notable null: handing this exact playbook to <code>gpt-6-luna</code> did <em>not</em> reproduce the behavior &mdash; it lost &minus;24% in a 2022 bear &mdash; so the property is model-specific, not prompt-portable.)</p>
+
+    <h3>4.3 The one durable property: bear-market capital preservation</h3>
+    <p>Where the bull-market edge is noisy, the baseline <code>claude_aggressive</code> in a <strong>bear market</strong> is the project&rsquo;s most reproducible good result. Across runs of 2022 (SPY &minus;21.8%) it ended near <strong>flat</strong> &mdash; &minus;0.0 / &minus;4.3 / &minus;2.4 / +0.0 / +0.8%, with one &minus;10.0% bad-draw tail &mdash; beating SPY by ~20 points each time, with single-digit drawdowns, by <strong>going to cash</strong> (up to 100% cash, sitting out the worst quarters). This is capital preservation, not profit, but for a drawdown-averse objective it is exactly the right shape, and it does not decay on repetition the way the bull edge does.</p>
+
+    <h3>4.4 Benchmark correction: &ldquo;beating SPY&rdquo; was mostly small-cap beta</h3>
+    <p>The agents trade a $3&ndash;$50 <strong>small-cap</strong> universe; SPY is large-cap. Against the like-for-like <strong>IWM</strong> benchmark the apparent edge largely vanishes, and in <strong>2021</strong> &mdash; a large-cap-led bull &mdash; <em>every</em> agent and IWM itself trailed SPY badly:</p>
     <figure>
-      <figcaption>Table 3 · Two-year compounded ($10,000 start)</figcaption>
+      <figcaption>Table 3 · 2021, a large-cap-led bull (SPY +26.9%)</figcaption>
       <div class="tbl"><table>
-        <thead><tr><th>Agent</th><th>2-yr total</th><th>Ending value</th><th>Qtrs beating SPY</th><th>Quarterly vol</th></tr></thead>
+        <thead><tr><th>2021</th><th>Return</th></tr></thead>
         <tbody>
-          <tr><td>random_control</td><td class="pos">+67.1%</td><td>$16,714</td><td>4 / 8</td><td>16.0%</td></tr>
-          <tr class="hi"><td>spy_buy_hold</td><td>+48.6%</td><td>$14,863</td><td>&mdash;</td><td>4.6%</td></tr>
-          <tr><td>gemini_balanced</td><td class="pos">+37.8%</td><td>$13,782</td><td>5 / 8</td><td>4.8%</td></tr>
-          <tr><td>gemini_conservative</td><td>+3.2%</td><td>$10,322</td><td>2 / 8</td><td>3.7%</td></tr>
-          <tr><td>gemini_aggressive</td><td>+1.6%</td><td>$10,159</td><td>4 / 8</td><td>15.5%</td></tr>
+          <tr class="hi"><td>SPY</td><td>+26.9%</td></tr>
+          <tr><td>claude_robust</td><td class="pos">+12% to +24% (noisy)</td></tr>
+          <tr><td>IWM</td><td class="pos">+11.8%</td></tr>
+          <tr><td>claude_aggressive</td><td>&minus;5% to +4%</td></tr>
+          <tr><td>random_control</td><td>+2% to &minus;21%</td></tr>
         </tbody>
       </table></div>
     </figure>
+    <p>So the agents were never beating &ldquo;the market&rdquo;; they were long small-caps, which beat SPY in 2020 (crash-recovery) and 2022 (bear) and lost to it in 2021. The 2020/2022 &ldquo;wins&rdquo; were the universe, not skill.</p>
 
+    <h3>4.5 Tuning adds no edge &mdash; only reshuffled noise</h3>
+    <p>Two hand-tuned playbook variants (<code>robust</code>, <code>return</code>) were run head-to-head with the baseline on identical data. On a cherry-picked 2-quarter probe <code>robust</code> looked spectacular; on a full held-out year it did not reproduce, and repeated full-year runs <strong>inverted the ranking</strong>:</p>
     <figure>
-      <figcaption>Table 4 · Pooled paired bootstrap vs SPY (&asymp;500 day-pairs, 1-year horizon). &ldquo;Prob. beat SPY&rdquo; near 50% means no edge.</figcaption>
+      <figcaption>Table 4 · Full-year 2020 return, two runs of the same configuration</figcaption>
       <div class="tbl"><table>
-        <thead><tr><th>Agent</th><th>Prob. beat SPY</th><th>Median margin</th><th>90% band (p5&hellip;p95)</th><th>Median 1-yr</th><th>Prob. loss</th></tr></thead>
+        <thead><tr><th>Full-year return</th><th>2020 run 1</th><th>2020 run 2</th></tr></thead>
         <tbody>
-          <tr><td>random_control</td><td>59%</td><td>+5.7%</td><td>&minus;27.8% &hellip; +63.3%</td><td>+29.6%</td><td>20%</td></tr>
-          <tr class="hi"><td>spy_buy_hold</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>+21.8%</td><td>10%</td></tr>
-          <tr><td>gemini_balanced</td><td>40%</td><td>&minus;4.0%</td><td>&minus;26.1% &hellip; +24.9%</td><td>+17.5%</td><td>16%</td></tr>
-          <tr><td>gemini_aggressive</td><td>27%</td><td>&minus;17.6%</td><td>&minus;50.9% &hellip; +38.0%</td><td>+0.8%</td><td>49%</td></tr>
-          <tr><td>gemini_conservative</td><td>12%</td><td>&minus;17.0%</td><td>&minus;36.3% &hellip; +7.1%</td><td>+1.4%</td><td>44%</td></tr>
+          <tr><td>claude_aggressive</td><td class="pos">+79.2% (best)</td><td class="pos">+20.8% (worst)</td></tr>
+          <tr><td>claude_return</td><td class="pos">+70.1%</td><td class="pos">+31.9%</td></tr>
+          <tr><td>claude_robust</td><td class="pos">+56.2% (worst)</td><td class="pos">+35.1% (best)</td></tr>
         </tbody>
       </table></div>
     </figure>
-    <p>No agent reaches a 50% beat-probability; balanced is closest at 40% but with a negative median margin. (Aggressive + random and conservative + balanced were run as two batches; SPY buy-and-hold is deterministic over identical dates, so it anchors both consistently.)</p>
+    <p>The baseline went from best to worst between two runs of the <em>same</em> year. The between-agent gaps (~10&ndash;20 pts) are smaller than the within-agent run-to-run spread (~40&ndash;60 pts): tuning the playbook does not add a detectable edge.</p>
 
-    <h3>4.4 Out-of-sample corroboration (2026 Q2)</h3>
+    <h3>4.6 The noise, laid bare</h3>
+    <p>Every full-year return recorded, by agent (deterministic benchmarks for contrast):</p>
     <figure>
-      <figcaption>Table 5 · A separate 2026 quarter, all personas in one run</figcaption>
+      <figcaption>Table 5 · All full-year runs; only the benchmark lines are stable</figcaption>
       <div class="tbl"><table>
-        <thead><tr><th>Agent</th><th>Return</th><th>Max DD</th><th>Ann vol</th><th>Sharpe</th></tr></thead>
+        <thead><tr><th>Agent</th><th>2020</th><th>2021</th><th>2022</th></tr></thead>
         <tbody>
-          <tr class="hi"><td>spy_buy_hold</td><td>+14.26%</td><td>4.49%</td><td>13.9%</td><td>+4.03</td></tr>
-          <tr><td>gemini_aggressive</td><td>+13.33%</td><td>16.03%</td><td>39.0%</td><td>+1.50</td></tr>
-          <tr><td>random_control</td><td>+11.31%</td><td>9.82%</td><td>23.4%</td><td>+1.98</td></tr>
-          <tr><td>gemini_balanced</td><td>+4.77%</td><td>7.28%</td><td>16.7%</td><td>+1.22</td></tr>
-          <tr><td>gemini_conservative</td><td>&minus;3.09%</td><td>3.83%</td><td>9.2%</td><td>&minus;1.34</td></tr>
+          <tr><td>claude_aggressive</td><td>+79.2, +20.8</td><td>&minus;5.2, +4.0, &minus;4.4, &minus;7.1</td><td>&minus;0.0, &minus;4.3, &minus;2.4, +0.0, &minus;10.0, +0.8</td></tr>
+          <tr><td>claude_robust</td><td>+56.2, +35.1</td><td>+12.0, +14.3, +23.8, &minus;8.4</td><td>&minus;22.0, &minus;3.1, &minus;10.7</td></tr>
+          <tr><td>claude_return</td><td>+70.1, +31.9</td><td>&mdash;</td><td>&mdash;</td></tr>
+          <tr><td>claude_switch</td><td>&mdash;</td><td>+27.1</td><td>&minus;10.3, &minus;18.1</td></tr>
+          <tr><td>random_control</td><td>+140.6, +77.8</td><td>+4.4, &minus;20.8, +1.8, &minus;0.9</td><td>&minus;58.5, &minus;47.2, &minus;53.1, &minus;53.4, &minus;44.1</td></tr>
+          <tr class="hi"><td>SPY (deterministic)</td><td>+21.1</td><td>+26.9</td><td>&minus;21.8</td></tr>
+          <tr class="hi"><td>IWM (deterministic)</td><td>&mdash;</td><td>+11.8</td><td>&minus;25.3</td></tr>
         </tbody>
       </table></div>
     </figure>
-    <p>No persona beat SPY on return or Sharpe; conservative <em>lost money in a +14% quarter</em> by being too timid.</p>
+    <p>The only stable lines are the ones with no LLM in them.</p>
+
+    <h3>4.7 Regime-switching made it worse</h3>
+    <p>Since <code>robust</code> won bulls and the baseline won bears, we built <code>claude_switch</code>: each day, point-in-time, it runs the robust playbook when SPY is above its 200-day MA (risk-on) and the cash-defensive baseline when below (risk-off). The mechanism worked &mdash; risk-on through 2021, flipping risk-off when SPY broke its 200-DMA on 2022-01-21 &mdash; but then <strong>whipsawed seven times in two months</strong> as 2022 oscillated around the average, and ended the bear <strong>below both of its components</strong>:</p>
+    <figure>
+      <figcaption>Table 6 · 2022 bear: the switch lands below both parts</figcaption>
+      <div class="tbl"><table>
+        <thead><tr><th>2022 (bear)</th><th>Return</th></tr></thead>
+        <tbody>
+          <tr><td>claude_aggressive (baseline)</td><td class="pos">+0.8%</td></tr>
+          <tr><td>claude_robust</td><td>&minus;10.7%</td></tr>
+          <tr class="hi"><td>claude_switch</td><td>&minus;18.1%</td></tr>
+        </tbody>
+      </table></div>
+    </figure>
+    <p>A switch that lands below both parts is the signature of the switching itself destroying value. Na&iuml;ve 200-DMA regime-timing added a new failure mode (whipsaw and lag) without a reliable benefit.</p>
+
+    <h3>4.8 Live forward test (in progress)</h3>
+    <p>Backtests carry upward biases (survivorship, hindsight-built watchlist, idealized fills). A daily paper-trade harness trades the baseline <code>claude_aggressive</code> &mdash; the agent the evidence favors &mdash; plus a random control, on live, unseen days with fake money (from Nov 2026). Early days confirm the mechanics and, encouragingly, the same defensive character seen in backtests: it holds one small position at ~90% cash rather than churning, and on a down day fell far less than the market. It is too early for a performance read; the real test is a live drawdown. This is the only part of the study still accumulating, and it is the honest arbiter of everything above.</p>
   </section>
 
   <section>
-    <h2><span class="n">5</span>Case analysis: why the random control won</h2>
-    <p>The random control&rsquo;s +67.1% is not evidence that randomness trades well; it is evidence of how misleading raw return is without a risk and luck lens. Two mechanisms explain it.</p>
-    <p><strong>Lottery-ticket concentration.</strong> The control&rsquo;s best quarter, 2024 Q4 (+22.9%), was essentially one position: it bought QUBT at $6.45 and held to $16.55 (+157%), while its other holdings were flat or down. One random dart hit a 2.5-bagger and carried the quarter. Its other blowout, 2025 Q2 (+36.4%), came from staying &asymp;78% invested across ten high-beta small-caps during a rally.</p>
-    <p><strong>Buy-and-hold beta vs agent churn.</strong> All agents draw from the same deliberately volatile $3&ndash;$50 catalyst watchlist. The random agent mostly buys and holds; in a 2024&ndash;25 window where those small-caps ran, passively holding high-beta names beat both SPY (large-cap, lower beta) and the LLM agents, who traded the <em>same</em> names actively &mdash; selling winners early, getting stopped out on normal small-cap volatility, and sitting in cash. The agents churned themselves out of the very rallies the control rode.</p>
-    <p><strong>Why it is still not skill.</strong> The control is the riskiest participant (16.0% quarterly volatility, a 20% bootstrap probability of loss, a p5 of &minus;22%). Its high mean is a right-tail outcome of a high-variance bet: it beat SPY in only 4 of 8 quarters, and in an earlier 2026 Q3 run the same strategy <em>lost 13.7%</em>. The takeaway is not &ldquo;random is good&rdquo; but &ldquo;the window favored high-beta buy-and-hold, the control blundered into it, and the agents were beaten by a dart-thrower&rdquo; &mdash; the sharpest possible evidence of no alpha. On a risk-adjusted basis SPY still wins cleanly: +48.6% at 4.6% volatility versus the control&rsquo;s +67.1% at 16.0% with a fat downside tail.</p>
+    <h2><span class="n">5</span>Case analysis: why the random control &ldquo;won&rdquo;</h2>
+    <p>The control&rsquo;s high returns are not evidence that randomness trades well; they show how misleading raw return is without a risk and luck lens. <strong>Lottery-ticket concentration:</strong> its best quarters were carried by one or two high-beta small-caps that happened to multiply. <strong>Buy-and-hold beta vs agent churn:</strong> all agents draw from the same volatile $3&ndash;$50 watchlist; the random agent mostly buys and holds, and in windows where those small-caps ran, passively holding high-beta names beat both SPY and the LLM agents, who traded the <em>same</em> names actively &mdash; selling winners early and getting stopped out on noise. <strong>Why it is still not skill:</strong> the control is the riskiest participant (high volatility, deep drawdowns, and in 2022 it lost ~50%). Its high-variance mean swung from +140% (2020) to &minus;53% (2022). The lesson is not &ldquo;random is good&rdquo; but &ldquo;the window favored high-beta buy-and-hold, and the agents were beaten by a dart-thrower&rdquo; &mdash; the sharpest evidence of no alpha.</p>
   </section>
 
   <section>
     <h2><span class="n">6</span>Discussion</h2>
-    <p><strong>Personas move risk, not return.</strong> The three personas produced exactly the volatility ordering their mandates imply &mdash; conservative 3.7%, balanced 4.8%, aggressive 15.5% quarterly &mdash; but none converted that into a return edge over SPY. Aggressive took large risk for no reward; conservative was so defensive it lost money in up quarters. Balanced was the only one that behaved like a sane index-tracker (near-SPY volatility, 5/8 quarters beating SPY) yet still trailed and sits at a 40% beat-probability &mdash; i.e. a slightly <em>worse</em> index fund, not a market-beater.</p>
-    <p><strong>Active churn is a tax in a trending market.</strong> Section 5 shows the agents repeatedly traded out of names that then ran, paying slippage and getting stopped out on noise. In a momentum regime, discretionary trading of high-beta names underperformed simply holding them &mdash; a familiar result that LLMs reproduce rather than escape.</p>
-    <p><strong>Consistency with the null.</strong> The findings are what the efficient-market hypothesis predicts: net of risk, active LLM strategies did not beat a passive benchmark, and a random strategy was statistically indistinguishable from &mdash; or better than &mdash; the &ldquo;intelligent&rdquo; ones. Nothing here suggests the agents extracted information the market had not already priced.</p>
-    <p><strong>On single runs.</strong> Aggressive beat SPY in 4 of 8 quarters and, in isolation, 2024 Q1 looked like a triumph (+19%, a 98% single-quarter beat-probability in the bootstrap). Pooling dissolves that illusion. Any claim built on one or two quarters &mdash; the usual format for &ldquo;my AI beats the market&rdquo; demonstrations &mdash; would here have been noise.</p>
+    <p><strong>Decision noise dominates.</strong> The central empirical fact is that the <em>same</em> configuration swings 30&ndash;60 return-points between runs. This is larger than any edge we could find or engineer, and it is why every improvement attempt failed: more capable models (&sect;4.2), hand-tuned playbooks (&sect;4.5), and regime-switching (&sect;4.7) each tried to tune a signal smaller than the noise. The only stable performers in the entire study are the deterministic benchmark lines.</p>
+    <p><strong>Beta, not alpha.</strong> Correcting the benchmark (&sect;4.4) dissolves most of the apparent skill: the agents were long small-caps, and &ldquo;beating SPY&rdquo; tracked when small-caps beat large-caps, reversing in 2021. Against the like-for-like IWM the edge is negligible.</p>
+    <p><strong>Active churn is a tax in a trending market.</strong> As in the primary study, agents repeatedly traded out of names that then ran, paying slippage and stop-outs. LLMs reproduce this familiar failure rather than escape it.</p>
+    <p><strong>The one real property is defensive.</strong> The exception to all of the above is the baseline&rsquo;s bear-market cash-defense (&sect;4.3) &mdash; reproducible, model-specific, and income-relevant in <em>shape</em>. It is not alpha (it preserves, it does not generate), but it is the one behavior that survived every robustness check, which is why it is the one we are testing live.</p>
+    <p><strong>On single runs.</strong> A single Claude-aggressive run looked like a market-beater (+84%, 71%); a single robust probe looked spectacular (+30.9%). Both dissolved on repetition. Any claim built on one or two runs &mdash; the usual format for &ldquo;my AI beats the market&rdquo; demonstrations &mdash; would here have been noise.</p>
   </section>
 
   <section>
     <h2><span class="n">7</span>Limitations</h2>
-    <p>These bound the claim to <em>&ldquo;in this setup, these agents did not beat the market.&rdquo;</em> They do not establish that LLMs cannot trade.</p>
+    <p>These bound the claim to <em>&ldquo;in this setup, these agents did not beat the market dependably.&rdquo;</em> They do not establish that LLMs cannot trade.</p>
     <ul>
-      <li><strong>One model family.</strong> Only Gemini 3.8 Flash was tested. Larger or reasoning-tuned models, or other providers, may differ.</li>
-      <li><strong>Two years, recent regimes.</strong> 2024&ndash;2025 contains no 2008/2020-scale crash; behavior in a severe bear market is untested.</li>
-      <li><strong>Lean historical information set.</strong> To prevent look-ahead, historical agents trade without news or live fundamentals (&sect;3.4), so historical and live behavior are not identical &mdash; a deliberate, disclosed trade-off.</li>
-      <li><strong>Free-data caveats.</strong> yfinance carries survivorship bias (delisted tickers silently absent) and adjusted-vs-raw price quirks; the watchlist is a fixed set of <em>current</em> small-caps, some of which lacked data in older quarters. A point-in-time vendor (e.g. Databento/Polygon/CRSP) would harden this.</li>
-      <li><strong>FRED vintage.</strong> Macro uses current data filtered by observation date, not ALFRED point-in-time vintages; this matters only for revised series (e.g. CPI).</li>
-      <li><strong>LLM nondeterminism.</strong> Even at temperature 0, provider inference is not bit-reproducible, so single-run returns vary; we mitigate by pooling and by drawing conclusions from distributions, not point estimates.</li>
-      <li><strong>No explicit transaction-cost model beyond slippage.</strong> Commissions and market impact for small-caps are not separately modeled.</li>
+      <li><strong>Run-to-run noise is the dominant limitation.</strong> Single-run numbers (including the single-run OpenAI/Gemini results) are unreliable; conclusions rest on repeated runs and on the deterministic benchmark lines.</li>
+      <li><strong>Regimes span 2020&ndash;2025</strong> (crash-recovery, bull, bear) but each regime-and-agent cell is only 1&ndash;3 runs &mdash; enough to show noise dominates, not to pin small effects.</li>
+      <li><strong>The durable positive is one model, with a bad-draw tail</strong>, and awaits live confirmation (&sect;4.8).</li>
+      <li><strong>Ensembling is untested.</strong> Averaging many runs per day would shrink the noise ~1/&radic;N; cost precluded testing it, so &ldquo;tuning cannot fix the noise&rdquo; is shown for the model/playbook/regime-switch levers but not for ensembling.</li>
+      <li><strong>Lean historical information set</strong> (no as-of news), <strong>free-data caveats</strong> (yfinance survivorship and adjusted-price quirks; a watchlist of <em>current</em> small-caps), <strong>FRED vintage</strong> (observation-date filtering, not ALFRED), and <strong>no explicit transaction costs beyond slippage</strong>.</li>
     </ul>
   </section>
 
   <section>
     <h2><span class="n">8</span>Conclusion and future work</h2>
-    <p>Within a rigorous benchmark &mdash; rules enforced in code, strictly point-in-time data, a passive SPY benchmark, a random control, and a pooled paired bootstrap &mdash; <strong>no Gemini persona showed risk-adjusted skill versus passive indexing</strong> over eight quarters. The best (balanced) approximated a slightly-worse index fund; aggressive and conservative destroyed value by taking too much or too little risk; and a random control was indistinguishable from, or better than, the agents. The result is consistent across two independent batches and corroborated out-of-sample. It is a clean negative result &mdash; arguably more useful than a noisy positive one.</p>
-    <p><strong>Toward a publishable study.</strong> The methodology is the right shape; the gaps are scale, data, and statistical depth:</p>
-    <ol>
-      <li><strong>More models.</strong> Add other families (OpenAI, Anthropic, and a local open-weight model for zero-cost inference) to test whether the no-edge result generalizes.</li>
-      <li><strong>Multiple seeds per condition.</strong> Run each configuration several times and report confidence intervals, directly addressing LLM nondeterminism.</li>
-      <li><strong>Point-in-time vendor data.</strong> Replace free yfinance to remove survivorship and adjusted-price confounds.</li>
-      <li><strong>Longer horizon and more regimes</strong>, including a drawdown period, for external validity.</li>
-      <li><strong>Explicit transaction costs</strong> (commissions, impact) and a turnover analysis, since churn is a leading explanation for underperformance.</li>
-      <li><strong>A control suite</strong> beyond SPY and random: equal-weight, simple momentum, and a watchlist buy-and-hold, to separate universe effects from agent decisions.</li>
-    </ol>
-    <p>The code, tests, and one-click reproduction workflows are released so these extensions can be run directly.</p>
+    <p>Within a rigorous benchmark &mdash; rules enforced in code, strictly point-in-time data, passive and like-for-like benchmarks, a random control, and repeated runs &mdash; <strong>no LLM agent produced a dependable edge over passive indexing</strong>, and the three main ways to engineer one (more capable models, hand-tuned playbooks, regime-switching) all failed to the same cause: <strong>the model&rsquo;s run-to-run decision variance is larger than any edge.</strong> Most apparent SPY-beating was small-cap beta that reversed against the right benchmark. The one durable, useful property is the baseline agent&rsquo;s <strong>bear-market capital preservation</strong>, now under live validation. This is a clean negative result on &ldquo;LLMs as a dependable trading strategy,&rdquo; with one narrow, real capital-preservation property worth watching &mdash; arguably more useful than a noisy positive.</p>
+    <p><strong>The decisive open question is variance, not strategy.</strong> The untested lever is <strong>ensembling</strong> &mdash; averaging many runs per day to shrink decision noise ~1/&radic;N &mdash; which is the only avenue not closed here and the natural next study, alongside point-in-time vendor data, explicit transaction costs, and a longer live forward test. The code, tests, and one-click reproduction workflows are released so these extensions can be run directly.</p>
   </section>
 
   <section>
     <h2>Appendix</h2>
     <h3>A. Reproducibility</h3>
-    <p>The benchmark runs via GitHub Actions. <em>Backtest (date range)</em> runs a single window; <em>Batch Backtest (multi-quarter)</em> runs eight independent quarters as a matrix and pools them into a combined verdict. Inputs: <code>agents</code> (which personas) and <code>max_tool_calls</code> (per-agent tool-call budget; 4 for the primary study, 8 for the 2026 corroboration). Each run emits <code>summary.md</code> (leaderboard with risk metrics), <code>monte_carlo.md</code> (beat-SPY distribution), and, for the batch, <code>combined_verdict.md</code>. The simulator and analysis scripts are covered by 67 stdlib-only unit tests run in CI.</p>
+    <p>The benchmark runs via GitHub Actions. <em>Backtest (date range)</em> runs a single window; <em>Batch Backtest (multi-quarter)</em> runs quarters as a matrix and pools them into a combined verdict. Inputs: <code>agents</code>, <code>max_tool_calls</code>, <code>quarters</code>, and <code>strict_prices</code> (strict price-integrity on for a final audited run, off for iterative exploration). A live paper-trade workflow runs the baseline daily and commits a ledger. The simulator and analysis scripts are covered by stdlib-only unit tests in CI.</p>
     <h3>B. Enforced constraints</h3>
-    <p>Long-only; $3&ndash;$50 price band checked at fill; T+1 execution at the next open with 0.1% slippage; stops and take-profits checked against daily High/Low with gap-throughs filling at the open; 5&ndash;25% per position; &le;15 positions; &le;3 new buys/day; mandatory stop-loss on every buy; one frozen daily OHLC set shared across agents. Starting capital $10,000 per agent per run.</p>
+    <p>Long-only; $3&ndash;$50 price band at fill; T+1 at the next open with 0.1% slippage; stops/targets vs daily High/Low with gap-throughs filling at the open; 5&ndash;25% per position; &le;15 positions; &le;3 new buys/day; mandatory stop-loss on every buy; one frozen daily OHLC set shared across agents; non-finite prices rejected and carried forward. Starting capital $10,000 per agent per run.</p>
     <h3>C. AI-assistance disclosure</h3>
-    <p>This benchmark&rsquo;s code, test suite, and the drafting of this document were produced with substantial assistance from an AI coding assistant (Anthropic&rsquo;s Claude), under the direction of the human author, who defined the research questions, reviewed the methodology and code, directed each design decision, verified the results, and takes full responsibility for the work. No AI system is an author. This disclosure is provided in line with current publisher and conference policies on AI-assisted work; any venue submission should follow that venue&rsquo;s specific disclosure requirements.</p>
+    <p>This benchmark&rsquo;s code, test suite, and the drafting of this document were produced with substantial assistance from an AI coding assistant (Anthropic&rsquo;s Claude), under the direction of the human author, who defined the research questions, reviewed the methodology and code, directed each design decision, verified the results, and takes full responsibility for the work. No AI system is an author. Any venue submission should follow that venue&rsquo;s specific AI-disclosure requirements.</p>
     <h3>D. Availability</h3>
-    <p>Source, tests, workflows, and the <code>FINDINGS.md</code> summary are in the project repository. Results artifacts (<code>summary.md</code>, <code>monte_carlo.md</code>, <code>combined_verdict.md</code>, per-quarter data) are produced by the workflows above and can be regenerated.</p>
+    <p>Source, tests, workflows, and the <code>FINDINGS.md</code> summary are in the project repository. Results artifacts are produced by the workflows above and can be regenerated.</p>
   </section>
 
   <footer>
