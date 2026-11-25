@@ -1,10 +1,10 @@
 {
   "agent_id": "random_control",
-  "cash": 7897.11,
+  "cash": 6024.47,
   "starting_capital": 10000.0,
-  "peak_value": 10000.0,
+  "peak_value": 10017.35,
   "max_drawdown": 0.011317,
-  "last_value": 9886.83,
+  "last_value": 10017.35,
   "positions": {
     "CELH": {
       "ticker": "CELH",
@@ -13,72 +13,84 @@
       "entry_date": "2026-11-20",
       "stop_loss_price": 26.8396,
       "take_profit_price": 37.9467,
-      "current_price": 28.459999084472656,
-      "unrealized_pnl": -69.28364289436101,
-      "unrealized_pnl_pct": -0.06475106852119403
+      "current_price": 28.510000228881836,
+      "unrealized_pnl": -67.52549235440969,
+      "unrealized_pnl_pct": -0.06310793716540575
     },
-    "CPRI": {
-      "ticker": "CPRI",
-      "shares": 56.385668,
-      "entry_price": 18.3183,
-      "entry_date": "2026-11-20",
-      "stop_loss_price": 15.5706,
-      "take_profit_price": 27.1111,
-      "current_price": 17.540000915527344,
-      "unrealized_pnl": -43.88491378177919,
-      "unrealized_pnl_pct": -0.042487517098893285
+    "ARWR": {
+      "ticker": "ARWR",
+      "shares": 32.465613,
+      "entry_price": 44.1241,
+      "entry_date": "2026-11-24",
+      "stop_loss_price": 38.8733,
+      "take_profit_price": 54.0079,
+      "current_price": 48.33000183105469,
+      "unrealized_pnl": 136.5471811630129,
+      "unrealized_pnl_pct": 0.09531983272304
+    },
+    "ENPH": {
+      "ticker": "ENPH",
+      "shares": 29.022382,
+      "entry_price": 20.5405,
+      "entry_date": "2026-11-24",
+      "stop_loss_price": 19.7394,
+      "take_profit_price": null,
+      "current_price": 20.3700008392334,
+      "unrealized_pnl": -4.948291774447768,
+      "unrealized_pnl_pct": -0.008300633420150584
+    },
+    "RGTI": {
+      "ticker": "RGTI",
+      "shares": 109.374986,
+      "entry_price": 7.8078,
+      "entry_date": "2026-11-24",
+      "stop_loss_price": 6.8787,
+      "take_profit_price": null,
+      "current_price": 7.590000152587891,
+      "unrealized_pnl": -23.821855261501632,
+      "unrealized_pnl_pct": -0.027895162198328553
     }
   },
   "pending_orders": [
     {
-      "action": "SELL",
-      "ticker": "CPRI",
-      "allocation_pct": 100,
+      "action": "BUY",
+      "ticker": "HPQ",
+      "allocation_pct": 14.41,
       "order_type": "MARKET",
       "limit_price": null,
-      "stop_loss_pct": 10,
-      "take_profit_pct": null,
-      "reason": "Random control sell decision.",
-      "submitted_date": "2026-11-20"
+      "stop_loss_pct": 6.7,
+      "take_profit_pct": 27.1,
+      "reason": "Randomly selected from liquid universe.",
+      "submitted_date": "2026-11-24"
     },
     {
       "action": "BUY",
-      "ticker": "ARWR",
-      "allocation_pct": 14.44,
+      "ticker": "RIVN",
+      "allocation_pct": 13.87,
       "order_type": "MARKET",
       "limit_price": null,
-      "stop_loss_pct": 11.9,
-      "take_profit_pct": 22.4,
+      "stop_loss_pct": 12.5,
+      "take_profit_pct": 11.2,
       "reason": "Randomly selected from liquid universe.",
-      "submitted_date": "2026-11-20"
+      "submitted_date": "2026-11-24"
     },
     {
       "action": "BUY",
-      "ticker": "ENPH",
-      "allocation_pct": 6.01,
+      "ticker": "GTLB",
+      "allocation_pct": 14.58,
       "order_type": "MARKET",
       "limit_price": null,
-      "stop_loss_pct": 3.9,
+      "stop_loss_pct": 8.8,
       "take_profit_pct": null,
       "reason": "Randomly selected from liquid universe.",
-      "submitted_date": "2026-11-20"
-    },
-    {
-      "action": "BUY",
-      "ticker": "RGTI",
-      "allocation_pct": 8.61,
-      "order_type": "MARKET",
-      "limit_price": null,
-      "stop_loss_pct": 11.9,
-      "take_profit_pct": null,
-      "reason": "Randomly selected from liquid universe.",
-      "submitted_date": "2026-11-20"
+      "submitted_date": "2026-11-24"
     }
   ],
   "daily_returns": [
     0.0,
     0.0,
     0.0,
-    -0.011317
+    -0.011317,
+    0.013201
   ]
 }

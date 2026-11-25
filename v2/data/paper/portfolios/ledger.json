@@ -542,5 +542,114 @@
       "value": 9164.6,
       "cum_ret": -0.08354
     }
+  },
+  {
+    "date": "2026-11-24",
+    "agents": {
+      "claude_aggressive": {
+        "value": 9844.33,
+        "day_ret": -6.7e-05,
+        "cum_ret": -0.015567,
+        "cash_pct": 90.2,
+        "n_positions": 1,
+        "positions": [
+          "PENN"
+        ],
+        "max_drawdown": 0.017454,
+        "fills_today": [
+          {
+            "action": "SELL",
+            "ticker": "CPRI",
+            "shares": 52.5859,
+            "price": 17.9121,
+            "trigger": "AGENT"
+          },
+          {
+            "action": "BUY",
+            "ticker": "PENN",
+            "shares": 53.4421,
+            "price": 18.4584,
+            "trigger": "AGENT"
+          }
+        ],
+        "pending_next_open": [
+          {
+            "action": "BUY",
+            "ticker": "U",
+            "allocation_pct": 10
+          },
+          {
+            "action": "BUY",
+            "ticker": "IMVT",
+            "allocation_pct": 8
+          }
+        ]
+      },
+      "random_control": {
+        "value": 10017.35,
+        "day_ret": 0.013201,
+        "cum_ret": 0.001735,
+        "cash_pct": 60.1,
+        "n_positions": 4,
+        "positions": [
+          "ARWR",
+          "CELH",
+          "ENPH",
+          "RGTI"
+        ],
+        "max_drawdown": 0.011317,
+        "fills_today": [
+          {
+            "action": "SELL",
+            "ticker": "CPRI",
+            "shares": 56.3857,
+            "price": 17.9121,
+            "trigger": "AGENT"
+          },
+          {
+            "action": "BUY",
+            "ticker": "ARWR",
+            "shares": 32.4656,
+            "price": 44.1241,
+            "trigger": "AGENT"
+          },
+          {
+            "action": "BUY",
+            "ticker": "ENPH",
+            "shares": 29.0224,
+            "price": 20.5405,
+            "trigger": "AGENT"
+          },
+          {
+            "action": "BUY",
+            "ticker": "RGTI",
+            "shares": 109.375,
+            "price": 7.8078,
+            "trigger": "AGENT"
+          }
+        ],
+        "pending_next_open": [
+          {
+            "action": "BUY",
+            "ticker": "HPQ",
+            "allocation_pct": 14.41
+          },
+          {
+            "action": "BUY",
+            "ticker": "RIVN",
+            "allocation_pct": 13.87
+          },
+          {
+            "action": "BUY",
+            "ticker": "GTLB",
+            "allocation_pct": 14.58
+          }
+        ]
+      }
+    },
+    "spy": {
+      "value": 9549.48,
+      "cum_ret": -0.045052
+    }
   }
 ]
