@@ -1,10 +1,10 @@
 {
   "agent_id": "claude_aggressive",
-  "cash": 8878.1,
+  "cash": 7108.7,
   "starting_capital": 10000.0,
   "peak_value": 10019.21,
   "max_drawdown": 0.017454,
-  "last_value": 9844.33,
+  "last_value": 9909.38,
   "positions": {
     "PENN": {
       "ticker": "PENN",
@@ -13,35 +13,34 @@
       "entry_date": "2026-11-24",
       "stop_loss_price": 16.9817,
       "take_profit_price": 23.073,
-      "current_price": 18.079999923706055,
-      "unrealized_pnl": -20.222490933307945,
-      "unrealized_pnl_pct": -0.020500155825745804
+      "current_price": 18.559999465942383,
+      "unrealized_pnl": 5.429687802844702,
+      "unrealized_pnl_pct": 0.0055042401260337725
+    },
+    "U": {
+      "ticker": "U",
+      "shares": 20.961852,
+      "entry_price": 46.8968,
+      "entry_date": "2026-11-25",
+      "stop_loss_price": 43.1451,
+      "take_profit_price": 58.621,
+      "current_price": 48.2400016784668,
+      "unrealized_pnl": 28.155994790172606,
+      "unrealized_pnl_pct": 0.02864164886445979
+    },
+    "IMVT": {
+      "ticker": "IMVT",
+      "shares": 22.273046,
+      "entry_price": 35.3053,
+      "entry_date": "2026-11-25",
+      "stop_loss_price": 31.7748,
+      "take_profit_price": 45.8969,
+      "current_price": 35.810001373291016,
+      "unrealized_pnl": 11.241236903573906,
+      "unrealized_pnl_pct": 0.01429534300207088
     }
   },
-  "pending_orders": [
-    {
-      "action": "BUY",
-      "ticker": "U",
-      "allocation_pct": 10,
-      "order_type": "MARKET",
-      "limit_price": null,
-      "stop_loss_pct": 8,
-      "take_profit_pct": 25,
-      "reason": "Momentum name: price above 20d (46.57) and 50d (44.17) and 200d (32.72) SMAs, RSI 61.5, volume confirmation on 11/24 rebound. Choppy regime (VIX 26.6) so sized at 10% with standard -8% stop.",
-      "submitted_date": "2026-11-24"
-    },
-    {
-      "action": "BUY",
-      "ticker": "IMVT",
-      "allocation_pct": 8,
-      "order_type": "MARKET",
-      "limit_price": null,
-      "stop_loss_pct": 10,
-      "take_profit_pct": 30,
-      "reason": "Trend and relative strength: price 11% above 50d SMA, above 200d, RSI 64.7, 11/24 breakout on above-average volume. Speculative biotech sizing at 8% with -10% stop; no confirmed catalyst in feed.",
-      "submitted_date": "2026-11-24"
-    }
-  ],
+  "pending_orders": [],
   "daily_returns": [
     0.0,
     -0.000615,
@@ -53,6 +52,7 @@
     0.007486,
     -0.011178,
     -0.006281,
-    -6.7e-05
+    -6.7e-05,
+    0.006608
   ]
 }

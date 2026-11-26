@@ -1,7 +1,7 @@
 [
   {
-    "date": "2026-11-24",
-    "cash": 8878.1,
+    "date": "2026-11-25",
+    "cash": 7108.7,
     "positions": {
       "PENN": {
         "ticker": "PENN",
@@ -10,38 +10,60 @@
         "entry_date": "2026-11-24",
         "stop_loss_price": 16.9817,
         "take_profit_price": 23.073,
-        "current_price": 18.079999923706055,
-        "unrealized_pnl": -20.222490933307945,
-        "unrealized_pnl_pct": -0.020500155825745804
+        "current_price": 18.559999465942383,
+        "unrealized_pnl": 5.429687802844702,
+        "unrealized_pnl_pct": 0.0055042401260337725
+      },
+      "U": {
+        "ticker": "U",
+        "shares": 20.961852,
+        "entry_price": 46.8968,
+        "entry_date": "2026-11-25",
+        "stop_loss_price": 43.1451,
+        "take_profit_price": 58.621,
+        "current_price": 48.2400016784668,
+        "unrealized_pnl": 28.155994790172606,
+        "unrealized_pnl_pct": 0.02864164886445979
+      },
+      "IMVT": {
+        "ticker": "IMVT",
+        "shares": 22.273046,
+        "entry_price": 35.3053,
+        "entry_date": "2026-11-25",
+        "stop_loss_price": 31.7748,
+        "take_profit_price": 45.8969,
+        "current_price": 35.810001373291016,
+        "unrealized_pnl": 11.241236903573906,
+        "unrealized_pnl_pct": 0.01429534300207088
       }
     },
-    "portfolio_value": 9844.33,
-    "daily_return": -6.7e-05,
-    "cumulative_return": -0.015567,
+    "portfolio_value": 9909.38,
+    "daily_return": 0.006608,
+    "cumulative_return": -0.009062,
     "transactions_today": [
       {
-        "date": "2026-11-24",
-        "action": "SELL",
-        "ticker": "CPRI",
-        "shares": 52.585943,
-        "price": 17.9121,
-        "total": 941.92,
-        "stop_loss": null,
-        "take_profit": null,
-        "reason": "Momentum broke: CPRI closed at 17.54, below its 20-day SMA (19.25) and near the 17.05 stop after a 9%+ drop on 4x volume on 11/17. Playbook says exit immediately when price loses the 20-day MA. Exit at market rather than wait for the stop.",
+        "date": "2026-11-25",
+        "action": "BUY",
+        "ticker": "U",
+        "shares": 20.961852,
+        "price": 46.8968,
+        "total": 983.04,
+        "stop_loss": 43.1451,
+        "take_profit": 58.621,
+        "reason": "Momentum name: price above 20d (46.57) and 50d (44.17) and 200d (32.72) SMAs, RSI 61.5, volume confirmation on 11/24 rebound. Choppy regime (VIX 26.6) so sized at 10% with standard -8% stop.",
         "trigger": "AGENT",
         "order_type": "MARKET"
       },
       {
-        "date": "2026-11-24",
+        "date": "2026-11-25",
         "action": "BUY",
-        "ticker": "PENN",
-        "shares": 53.44209,
-        "price": 18.4584,
-        "total": 986.46,
-        "stop_loss": 16.9817,
-        "take_profit": 23.073,
-        "reason": "Trend and relative strength: price 18.05 is above SMA-20 (17.16) and SMA-50 (16.22), RSI 61, and the SMA-20 is above the SMA-50. Consumer Discretionary (XLY) is a LEADING sector. Volume is only about 1.1x average, below the 1.5x filter, so this is sized as a standard position, not high conviction. Stop at about 16.61 is 8% below entry.",
+        "ticker": "IMVT",
+        "shares": 22.273046,
+        "price": 35.3053,
+        "total": 786.36,
+        "stop_loss": 31.7748,
+        "take_profit": 45.8969,
+        "reason": "Trend and relative strength: price 11% above 50d SMA, above 200d, RSI 64.7, 11/24 breakout on above-average volume. Speculative biotech sizing at 8% with -10% stop; no confirmed catalyst in feed.",
         "trigger": "AGENT",
         "order_type": "MARKET"
       }

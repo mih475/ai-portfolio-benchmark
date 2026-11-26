@@ -651,5 +651,113 @@
       "value": 9549.48,
       "cum_ret": -0.045052
     }
+  },
+  {
+    "date": "2026-11-25",
+    "agents": {
+      "claude_aggressive": {
+        "value": 9909.38,
+        "day_ret": 0.006608,
+        "cum_ret": -0.009062,
+        "cash_pct": 71.7,
+        "n_positions": 3,
+        "positions": [
+          "IMVT",
+          "PENN",
+          "U"
+        ],
+        "max_drawdown": 0.017454,
+        "fills_today": [
+          {
+            "action": "BUY",
+            "ticker": "U",
+            "shares": 20.9619,
+            "price": 46.8968,
+            "trigger": "AGENT"
+          },
+          {
+            "action": "BUY",
+            "ticker": "IMVT",
+            "shares": 22.273,
+            "price": 35.3053,
+            "trigger": "AGENT"
+          }
+        ],
+        "pending_next_open": []
+      },
+      "random_control": {
+        "value": 10153.33,
+        "day_ret": 0.013574,
+        "cum_ret": 0.015333,
+        "cash_pct": 30.6,
+        "n_positions": 5,
+        "positions": [
+          "ARWR",
+          "CELH",
+          "GTLB",
+          "HPQ",
+          "RIVN"
+        ],
+        "max_drawdown": 0.011317,
+        "fills_today": [
+          {
+            "action": "SELL",
+            "ticker": "ENPH",
+            "shares": 29.0224,
+            "price": 19.4805,
+            "trigger": "STOP_LOSS"
+          },
+          {
+            "action": "SELL",
+            "ticker": "RGTI",
+            "shares": 109.375,
+            "price": 6.8718,
+            "trigger": "STOP_LOSS"
+          },
+          {
+            "action": "BUY",
+            "ticker": "HPQ",
+            "shares": 47.5375,
+            "price": 29.98,
+            "trigger": "AGENT"
+          },
+          {
+            "action": "BUY",
+            "ticker": "RIVN",
+            "shares": 123.2197,
+            "price": 11.1311,
+            "trigger": "AGENT"
+          },
+          {
+            "action": "BUY",
+            "ticker": "GTLB",
+            "shares": 33.1067,
+            "price": 43.5435,
+            "trigger": "AGENT"
+          }
+        ],
+        "pending_next_open": [
+          {
+            "action": "BUY",
+            "ticker": "ASAN",
+            "allocation_pct": 9.27
+          },
+          {
+            "action": "BUY",
+            "ticker": "NTLA",
+            "allocation_pct": 5.12
+          },
+          {
+            "action": "BUY",
+            "ticker": "RUN",
+            "allocation_pct": 7.41
+          }
+        ]
+      }
+    },
+    "spy": {
+      "value": 9521.85,
+      "cum_ret": -0.047815
+    }
   }
 ]
