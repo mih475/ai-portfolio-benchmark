@@ -2,9 +2,9 @@
   "agent_id": "claude_aggressive",
   "cash": 7108.7,
   "starting_capital": 10000.0,
-  "peak_value": 10019.21,
+  "peak_value": 10020.71,
   "max_drawdown": 0.017454,
-  "last_value": 9909.38,
+  "last_value": 10020.71,
   "positions": {
     "PENN": {
       "ticker": "PENN",
@@ -13,9 +13,9 @@
       "entry_date": "2026-11-24",
       "stop_loss_price": 16.9817,
       "take_profit_price": 23.073,
-      "current_price": 18.559999465942383,
-      "unrealized_pnl": 5.429687802844702,
-      "unrealized_pnl_pct": 0.0055042401260337725
+      "current_price": 19.360000610351562,
+      "unrealized_pnl": 48.18342096246308,
+      "unrealized_pnl_pct": 0.048845003377950495
     },
     "U": {
       "ticker": "U",
@@ -24,9 +24,9 @@
       "entry_date": "2026-11-25",
       "stop_loss_price": 43.1451,
       "take_profit_price": 58.621,
-      "current_price": 48.2400016784668,
-      "unrealized_pnl": 28.155994790172606,
-      "unrealized_pnl_pct": 0.02864164886445979
+      "current_price": 50.29999923706055,
+      "unrealized_pnl": 71.33735873377613,
+      "unrealized_pnl_pct": 0.07256783484290075
     },
     "IMVT": {
       "ticker": "IMVT",
@@ -35,9 +35,9 @@
       "entry_date": "2026-11-25",
       "stop_loss_price": 31.7748,
       "take_profit_price": 45.8969,
-      "current_price": 35.810001373291016,
-      "unrealized_pnl": 11.241236903573906,
-      "unrealized_pnl_pct": 0.01429534300207088
+      "current_price": 36.95000076293945,
+      "unrealized_pnl": 36.63249574918548,
+      "unrealized_pnl_pct": 0.04658509523894289
     }
   },
   "pending_orders": [],
@@ -53,6 +53,7 @@
     -0.011178,
     -0.006281,
     -6.7e-05,
-    0.006608
+    0.006608,
+    0.011235
   ]
 }

@@ -1,10 +1,10 @@
 {
   "agent_id": "random_control",
-  "cash": 3103.12,
+  "cash": 877.66,
   "starting_capital": 10000.0,
-  "peak_value": 10153.33,
+  "peak_value": 10324.37,
   "max_drawdown": 0.011317,
-  "last_value": 10153.33,
+  "last_value": 10324.37,
   "positions": {
     "CELH": {
       "ticker": "CELH",
@@ -13,9 +13,9 @@
       "entry_date": "2026-11-20",
       "stop_loss_price": 26.8396,
       "take_profit_price": 37.9467,
-      "current_price": 29.040000915527344,
-      "unrealized_pnl": -48.88949903043889,
-      "unrealized_pnl_pct": -0.04569112086836371
+      "current_price": 30.209999084472656,
+      "unrealized_pnl": -7.7497823943610165,
+      "unrealized_pnl_pct": -0.007242787328702302
     },
     "ARWR": {
       "ticker": "ARWR",
@@ -24,9 +24,9 @@
       "entry_date": "2026-11-24",
       "stop_loss_price": 38.8733,
       "take_profit_price": 54.0079,
-      "current_price": 49.59000015258789,
-      "unrealized_pnl": 177.45379905055944,
-      "unrealized_pnl_pct": 0.12387561791827804
+      "current_price": 49.95000076293945,
+      "unrealized_pnl": 189.14143954599706,
+      "unrealized_pnl_pct": 0.1320344383894392
     },
     "HPQ": {
       "ticker": "HPQ",
@@ -35,9 +35,9 @@
       "entry_date": "2026-11-25",
       "stop_loss_price": 27.9713,
       "take_profit_price": 38.1046,
-      "current_price": 31.149999618530273,
-      "unrealized_pnl": 55.61890600586683,
-      "unrealized_pnl_pct": 0.03902600462075627
+      "current_price": 32.150001525878906,
+      "unrealized_pnl": 103.15653867653258,
+      "unrealized_pnl_pct": 0.07238163862171133
     },
     "RIVN": {
       "ticker": "RIVN",
@@ -46,9 +46,9 @@
       "entry_date": "2026-11-25",
       "stop_loss_price": 9.7397,
       "take_profit_price": 12.3778,
-      "current_price": 11.710000038146973,
-      "unrealized_pnl": 71.33188439925821,
-      "unrealized_pnl_pct": 0.052007442044988604
+      "current_price": 12.180000305175781,
+      "unrealized_pnl": 129.24517254246578,
+      "unrealized_pnl_pct": 0.09423150498834627
     },
     "GTLB": {
       "ticker": "GTLB",
@@ -57,52 +57,52 @@
       "entry_date": "2026-11-25",
       "stop_loss_price": 39.7117,
       "take_profit_price": null,
-      "current_price": 45.16999816894531,
-      "unrealized_pnl": 53.84798205032721,
-      "unrealized_pnl_pct": 0.03735340909539451
+      "current_price": 45.56999969482422,
+      "unrealized_pnl": 67.09071136713781,
+      "unrealized_pnl_pct": 0.04653966022079569
+    },
+    "ASAN": {
+      "ticker": "ASAN",
+      "shares": 97.269059,
+      "entry_price": 9.7297,
+      "entry_date": "2026-11-27",
+      "stop_loss_price": 8.8832,
+      "take_profit_price": 11.6659,
+      "current_price": 9.979999542236328,
+      "unrealized_pnl": 24.346400941458455,
+      "unrealized_pnl_pct": 0.025725309334956762
+    },
+    "NTLA": {
+      "ticker": "NTLA",
+      "shares": 50.15796,
+      "entry_price": 10.4204,
+      "entry_date": "2026-11-27",
+      "stop_loss_price": 9.2846,
+      "take_profit_price": 14.3176,
+      "current_price": 10.319999694824219,
+      "unrealized_pnl": -5.035874490994668,
+      "unrealized_pnl_pct": -0.009634976121433152
+    },
+    "RUN": {
+      "ticker": "RUN",
+      "shares": 105.683492,
+      "entry_price": 7.1572,
+      "entry_date": "2026-11-27",
+      "stop_loss_price": 6.9282,
+      "take_profit_price": null,
+      "current_price": 6.96999979019165,
+      "unrealized_pnl": -19.78397187567899,
+      "unrealized_pnl_pct": -0.02615550911087425
     }
   },
-  "pending_orders": [
-    {
-      "action": "BUY",
-      "ticker": "ASAN",
-      "allocation_pct": 9.27,
-      "order_type": "MARKET",
-      "limit_price": null,
-      "stop_loss_pct": 8.7,
-      "take_profit_pct": 19.9,
-      "reason": "Randomly selected from liquid universe.",
-      "submitted_date": "2026-11-25"
-    },
-    {
-      "action": "BUY",
-      "ticker": "NTLA",
-      "allocation_pct": 5.12,
-      "order_type": "MARKET",
-      "limit_price": null,
-      "stop_loss_pct": 10.9,
-      "take_profit_pct": 37.4,
-      "reason": "Randomly selected from liquid universe.",
-      "submitted_date": "2026-11-25"
-    },
-    {
-      "action": "BUY",
-      "ticker": "RUN",
-      "allocation_pct": 7.41,
-      "order_type": "MARKET",
-      "limit_price": null,
-      "stop_loss_pct": 3.2,
-      "take_profit_pct": null,
-      "reason": "Randomly selected from liquid universe.",
-      "submitted_date": "2026-11-25"
-    }
-  ],
+  "pending_orders": [],
   "daily_returns": [
     0.0,
     0.0,
     0.0,
     -0.011317,
     0.013201,
-    0.013574
+    0.013574,
+    0.016846
   ]
 }
